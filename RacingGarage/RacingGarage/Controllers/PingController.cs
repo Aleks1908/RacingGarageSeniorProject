@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace RacingGarage.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/ping")]
 public class PingController : ControllerBase
 {
     [HttpGet]
