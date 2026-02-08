@@ -123,3 +123,11 @@
 /Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/obj/Debug/net10.0/RacingGarage.pdb
 /Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/obj/Debug/net10.0/RacingGarage.genruntimeconfig.cache
 /Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/obj/Debug/net10.0/ref/RacingGarage.dll
+/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/bin/Debug/net10.0/Microsoft.IdentityModel.Abstractions.dll
+/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/bin/Debug/net10.0/Microsoft.IdentityModel.JsonWebTokens.dll
+/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/bin/Debug/net10.0/Microsoft.IdentityModel.Logging.dll
+/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.dll
+/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/bin/Debug/net10.0/Microsoft.IdentityModel.Tokens.dll
+/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/bin/Debug/net10.0/System.IdentityModel.Tokens.Jwt.dll

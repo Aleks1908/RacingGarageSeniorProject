@@ -1,4 +1,4 @@
-namespace RacingGarage.Dto;
+namespace RacingGarage.dto;
 
 public sealed class TeamCarReadDto
 {

@@ -1,7 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RacingGarage.Data;
-using RacingGarage.Dto;
+using RacingGarage.dto;
 using RacingGarage.Models;
 
 namespace RacingGarage.Controllers;
@@ -63,6 +64,7 @@ public class TeamCarsController : ControllerBase
         return Ok(car);
     }
 
+    [Authorize(Roles = "Manager")]
     [HttpPost]
     public async Task<ActionResult<TeamCarReadDto>> Create([FromBody] TeamCarCreateDto dto)
     {
@@ -105,6 +107,7 @@ public class TeamCarsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = car.Id }, readDto);
     }
 
+    [Authorize(Roles = "Manager")]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] TeamCarUpdateDto dto)
     {
@@ -133,6 +136,7 @@ public class TeamCarsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -143,5 +147,103 @@ public class TeamCarsController : ControllerBase
         await _db.SaveChangesAsync();
 
         return NoContent();
+    }
+    
+    // GET /api/team-cars/{id}/dashboard
+    [HttpGet("{id:int}/dashboard")]
+    public async Task<ActionResult<TeamCarDashboardDto>> GetDashboard(int id)
+    {
+        var car = await _db.TeamCars
+            .AsNoTracking()
+            .Where(c => c.Id == id)
+            .Select(c => new TeamCarSummaryDto
+            {
+                Id = c.Id,
+                CarNumber = c.CarNumber,
+                Make = c.Make,
+                Model = c.Model,
+                Year = c.Year,
+                Status = c.Status
+            })
+            .FirstOrDefaultAsync();
+
+        if (car is null) return NotFound();
+        
+        var latestSession = await _db.CarSessions
+            .AsNoTracking()
+            .Where(s => s.TeamCarId == id)
+            .OrderByDescending(s => s.Date)
+            .ThenByDescending(s => s.Id)
+            .Select(s => new CarSessionReadDto
+            {
+                Id = s.Id,
+                TeamCarId = s.TeamCarId,
+                TeamCarNumber = s.TeamCar.CarNumber,
+
+                SessionType = s.SessionType,
+                Date = s.Date,
+                TrackName = s.TrackName,
+
+                DriverUserId = s.DriverUserId,
+                DriverName = s.DriverUserId != null ? s.DriverUser!.Name : null,
+
+                Laps = s.Laps,
+                Notes = s.Notes
+            })
+            .FirstOrDefaultAsync();
+
+        var openIssues = await _db.IssueReports
+            .AsNoTracking()
+            .Where(i => i.TeamCarId == id && i.Status != "Closed")
+            .OrderByDescending(i => i.ReportedAt)
+            .Select(i => new IssueReportReadDto
+            {
+                Id = i.Id,
+                TeamCarId = i.TeamCarId,
+                TeamCarNumber = i.TeamCar.CarNumber,
+                CarSessionId = i.CarSessionId,
+                ReportedByUserId = i.ReportedByUserId,
+                ReportedByName = i.ReportedByUser.Name,
+                LinkedWorkOrderId = i.LinkedWorkOrderId,
+                Title = i.Title,
+                Description = i.Description,
+                Severity = i.Severity,
+                Status = i.Status,
+                ReportedAt = i.ReportedAt,
+                ClosedAt = i.ClosedAt
+            })
+            .ToListAsync();
+
+        var openWos = await _db.WorkOrders
+            .AsNoTracking()
+            .Where(w => w.TeamCarId == id && w.Status != "Closed")
+            .OrderByDescending(w => w.CreatedAt)
+            .Select(w => new WorkOrderReadDto
+            {
+                Id = w.Id,
+                TeamCarId = w.TeamCarId,
+                TeamCarNumber = w.TeamCar.CarNumber,
+                CreatedByUserId = w.CreatedByUserId,
+                CreatedByName = w.CreatedByUser.Name,
+                AssignedToUserId = w.AssignedToUserId,
+                AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
+                CarSessionId = w.CarSessionId,
+                Title = w.Title,
+                Description = w.Description,
+                Priority = w.Priority,
+                Status = w.Status,
+                CreatedAt = w.CreatedAt,
+                DueDate = w.DueDate,
+                ClosedAt = w.ClosedAt
+            })
+            .ToListAsync();
+
+        return Ok(new TeamCarDashboardDto
+        {
+            Car = car,
+            LatestSession = latestSession,
+            OpenIssues = openIssues,
+            OpenWorkOrders = openWos
+        });
     }
 }

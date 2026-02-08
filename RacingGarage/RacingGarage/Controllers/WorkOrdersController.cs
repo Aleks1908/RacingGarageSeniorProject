@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RacingGarage.Data;
 using RacingGarage.dto;
 using RacingGarage.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace RacingGarage.Controllers;
 
@@ -13,6 +16,14 @@ public class WorkOrdersController : ControllerBase
     private readonly AppDbContext _db;
 
     public WorkOrdersController(AppDbContext db) => _db = db;
+
+    private bool TryGetCurrentUserId(out int userId)
+    {
+        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        return int.TryParse(idStr, out userId);
+    }
 
     // GET /api/work-orders
     [HttpGet]
@@ -37,24 +48,17 @@ public class WorkOrdersController : ControllerBase
             .Select(w => new WorkOrderReadDto
             {
                 Id = w.Id,
-
                 TeamCarId = w.TeamCarId,
                 TeamCarNumber = w.TeamCar.CarNumber,
-
                 CreatedByUserId = w.CreatedByUserId,
                 CreatedByName = w.CreatedByUser.Name,
-
                 AssignedToUserId = w.AssignedToUserId,
                 AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
-
                 CarSessionId = w.CarSessionId,
-
                 Title = w.Title,
                 Description = w.Description,
-
                 Priority = w.Priority,
                 Status = w.Status,
-
                 CreatedAt = w.CreatedAt,
                 DueDate = w.DueDate,
                 ClosedAt = w.ClosedAt
@@ -74,24 +78,17 @@ public class WorkOrdersController : ControllerBase
             .Select(w => new WorkOrderReadDto
             {
                 Id = w.Id,
-
                 TeamCarId = w.TeamCarId,
                 TeamCarNumber = w.TeamCar.CarNumber,
-
                 CreatedByUserId = w.CreatedByUserId,
                 CreatedByName = w.CreatedByUser.Name,
-
                 AssignedToUserId = w.AssignedToUserId,
                 AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
-
                 CarSessionId = w.CarSessionId,
-
                 Title = w.Title,
                 Description = w.Description,
-
                 Priority = w.Priority,
                 Status = w.Status,
-
                 CreatedAt = w.CreatedAt,
                 DueDate = w.DueDate,
                 ClosedAt = w.ClosedAt
@@ -103,19 +100,18 @@ public class WorkOrdersController : ControllerBase
     }
 
     // POST /api/work-orders
+    [Authorize(Roles = "Driver,Mechanic,Manager")]
     [HttpPost]
     public async Task<ActionResult<WorkOrderReadDto>> Create([FromBody] WorkOrderCreateDto dto)
     {
         if (dto.TeamCarId <= 0) return BadRequest("TeamCarId must be a positive integer.");
-        if (dto.CreatedByUserId <= 0) return BadRequest("CreatedByUserId must be a positive integer.");
         if (string.IsNullOrWhiteSpace(dto.Title)) return BadRequest("Title is required.");
 
-        // FK checks
+        if (!TryGetCurrentUserId(out var currentUserId))
+            return Unauthorized("Invalid token (missing user id).");
+
         var carExists = await _db.TeamCars.AnyAsync(c => c.Id == dto.TeamCarId);
         if (!carExists) return BadRequest($"TeamCarId '{dto.TeamCarId}' does not exist.");
-
-        var creatorExists = await _db.Users.AnyAsync(u => u.Id == dto.CreatedByUserId);
-        if (!creatorExists) return BadRequest($"CreatedByUserId '{dto.CreatedByUserId}' does not exist.");
 
         if (dto.AssignedToUserId.HasValue)
         {
@@ -132,7 +128,7 @@ public class WorkOrdersController : ControllerBase
         var wo = new WorkOrder
         {
             TeamCarId = dto.TeamCarId,
-            CreatedByUserId = dto.CreatedByUserId,
+            CreatedByUserId = currentUserId,
             AssignedToUserId = dto.AssignedToUserId,
             CarSessionId = dto.CarSessionId,
 
@@ -149,31 +145,23 @@ public class WorkOrdersController : ControllerBase
         _db.WorkOrders.Add(wo);
         await _db.SaveChangesAsync();
 
-        // Return read DTO
         var created = await _db.WorkOrders
             .AsNoTracking()
             .Where(w => w.Id == wo.Id)
             .Select(w => new WorkOrderReadDto
             {
                 Id = w.Id,
-
                 TeamCarId = w.TeamCarId,
                 TeamCarNumber = w.TeamCar.CarNumber,
-
                 CreatedByUserId = w.CreatedByUserId,
                 CreatedByName = w.CreatedByUser.Name,
-
                 AssignedToUserId = w.AssignedToUserId,
                 AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
-
                 CarSessionId = w.CarSessionId,
-
                 Title = w.Title,
                 Description = w.Description,
-
                 Priority = w.Priority,
                 Status = w.Status,
-
                 CreatedAt = w.CreatedAt,
                 DueDate = w.DueDate,
                 ClosedAt = w.ClosedAt
@@ -184,6 +172,7 @@ public class WorkOrdersController : ControllerBase
     }
 
     // PUT /api/work-orders/{id}
+    [Authorize(Roles = "Mechanic,Manager")]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] WorkOrderUpdateDto dto)
     {
@@ -192,7 +181,7 @@ public class WorkOrdersController : ControllerBase
 
         var wo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == id);
         if (wo is null) return NotFound();
-        
+
         var carExists = await _db.TeamCars.AnyAsync(c => c.Id == dto.TeamCarId);
         if (!carExists) return BadRequest($"TeamCarId '{dto.TeamCarId}' does not exist.");
 
@@ -226,6 +215,7 @@ public class WorkOrdersController : ControllerBase
     }
 
     // DELETE /api/work-orders/{id}
+    [Authorize(Roles = "Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -236,5 +226,99 @@ public class WorkOrdersController : ControllerBase
         await _db.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    // GET /api/work-orders/{id}/details
+    [HttpGet("{id:int}/details")]
+    public async Task<ActionResult<WorkOrderDetailsDto>> GetDetails(int id)
+    {
+        var wo = await _db.WorkOrders
+            .AsNoTracking()
+            .Where(w => w.Id == id)
+            .Select(w => new WorkOrderReadDto
+            {
+                Id = w.Id,
+                TeamCarId = w.TeamCarId,
+                TeamCarNumber = w.TeamCar.CarNumber,
+                CreatedByUserId = w.CreatedByUserId,
+                CreatedByName = w.CreatedByUser.Name,
+                AssignedToUserId = w.AssignedToUserId,
+                AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
+                CarSessionId = w.CarSessionId,
+                Title = w.Title,
+                Description = w.Description,
+                Priority = w.Priority,
+                Status = w.Status,
+                CreatedAt = w.CreatedAt,
+                DueDate = w.DueDate,
+                ClosedAt = w.ClosedAt
+            })
+            .FirstOrDefaultAsync();
+
+        if (wo is null) return NotFound();
+
+        var tasks = await _db.WorkOrderTasks
+            .AsNoTracking()
+            .Where(t => t.WorkOrderId == id)
+            .OrderBy(t => t.SortOrder).ThenBy(t => t.Id)
+            .Select(t => new WorkOrderTaskReadDto
+            {
+                Id = t.Id,
+                WorkOrderId = t.WorkOrderId,
+                Title = t.Title,
+                Description = t.Description,
+                Status = t.Status,
+                SortOrder = t.SortOrder,
+                EstimatedMinutes = t.EstimatedMinutes,
+                CompletedAt = t.CompletedAt
+            })
+            .ToListAsync();
+
+        var labor = await _db.LaborLogs
+            .AsNoTracking()
+            .Where(l => _db.WorkOrderTasks.Any(t => t.Id == l.WorkOrderTaskId && t.WorkOrderId == id))
+            .OrderByDescending(l => l.LogDate).ThenByDescending(l => l.Id)
+            .Select(l => new LaborLogReadDto
+            {
+                Id = l.Id,
+                WorkOrderTaskId = l.WorkOrderTaskId,
+                MechanicUserId = l.MechanicUserId,
+                MechanicName = l.MechanicUser.Name,
+                Minutes = l.Minutes,
+                LogDate = l.LogDate,
+                Comment = l.Comment
+            })
+            .ToListAsync();
+
+        var installs = await _db.PartInstallations
+            .AsNoTracking()
+            .Where(pi => pi.WorkOrderId == id)
+            .OrderByDescending(pi => pi.InstalledAt)
+            .Select(pi => new PartInstallationReadDto
+            {
+                Id = pi.Id,
+                WorkOrderId = pi.WorkOrderId,
+                PartId = pi.PartId,
+                PartSku = pi.Part.Sku,
+                PartName = pi.Part.Name,
+                InventoryLocationId = pi.InventoryLocationId,
+                LocationCode = pi.InventoryLocation.Code,
+                Quantity = pi.Quantity,
+                InstalledByUserId = pi.InstalledByUserId,
+                InstalledByName = pi.InstalledByUser != null ? pi.InstalledByUser.Name : null,
+                InstalledAt = pi.InstalledAt,
+                Notes = pi.Notes
+            })
+            .ToListAsync();
+
+        return Ok(new WorkOrderDetailsDto
+        {
+            WorkOrder = wo,
+            Tasks = tasks,
+            LaborLogs = labor,
+            PartInstallations = installs,
+            TotalLaborMinutes = labor.Sum(x => x.Minutes),
+            TotalInstalledPartsQty = installs.Sum(x => x.Quantity)
+        });
     }
 }

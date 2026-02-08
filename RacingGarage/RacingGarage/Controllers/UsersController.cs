@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -60,7 +61,7 @@ public class UsersController : ControllerBase
     }
 
     // POST /api/users
-    // TODO: lock this behind Manager-only authorization.
+    [Authorize(Roles = "Manager")]
     [HttpPost]
     public async Task<ActionResult<UserReadDto>> Create([FromBody] UserCreateDto dto)
     {
@@ -113,7 +114,7 @@ public class UsersController : ControllerBase
     }
     
     // PUT /api/users/{id}/role
-    // TODO: lock this behind Manager-only authorization.
+    [Authorize(Roles = "Manager")]
     [HttpPut("{id:int}/role")]
     public async Task<IActionResult> SetRole(int id, [FromBody] UserSetRoleDto dto)
     {
@@ -139,7 +140,7 @@ public class UsersController : ControllerBase
     }
 
     // PUT /api/users/{id}/deactivate
-    // TODO: lock this behind Manager-only authorization.
+    [Authorize(Roles = "Manager")]
     [HttpPut("{id:int}/deactivate")]
     public async Task<IActionResult> Deactivate(int id)
     {

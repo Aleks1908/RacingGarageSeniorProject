@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RacingGarage.Data;
 using RacingGarage.dto;
 using RacingGarage.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace RacingGarage.Controllers;
 
@@ -14,7 +17,17 @@ public class IssueReportsController : ControllerBase
 
     public IssueReportsController(AppDbContext db) => _db = db;
 
-    // GET /api/issue-reports?teamCarId=2&status=Open&severity=High
+    private bool TryGetCurrentUserId(out int userId)
+    {
+        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        return int.TryParse(idStr, out userId);
+    }
+
+    private bool IsInRole(string role) => User.IsInRole(role);
+
+    // GET /api/issue-reports?teamCarId=2&status=Open&severity=High&reportedByUserId=1
     [HttpGet]
     public async Task<ActionResult<List<IssueReportReadDto>>> GetAll(
         [FromQuery] int? teamCarId,
@@ -27,14 +40,28 @@ public class IssueReportsController : ControllerBase
         if (teamCarId.HasValue)
             q = q.Where(i => i.TeamCarId == teamCarId.Value);
 
-        if (reportedByUserId.HasValue)
-            q = q.Where(i => i.ReportedByUserId == reportedByUserId.Value);
-
         if (!string.IsNullOrWhiteSpace(status))
             q = q.Where(i => i.Status == status.Trim());
 
         if (!string.IsNullOrWhiteSpace(severity))
             q = q.Where(i => i.Severity == severity.Trim());
+
+        if (IsInRole("Driver") && !IsInRole("Manager"))
+        {
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized("Invalid token (missing user id).");
+
+            var targetReporter = reportedByUserId ?? currentUserId;
+            if (targetReporter != currentUserId)
+                return Forbid();
+
+            q = q.Where(i => i.ReportedByUserId == currentUserId);
+        }
+        else
+        {
+            if (reportedByUserId.HasValue)
+                q = q.Where(i => i.ReportedByUserId == reportedByUserId.Value);
+        }
 
         var list = await q
             .OrderByDescending(i => i.ReportedAt)
@@ -99,23 +126,32 @@ public class IssueReportsController : ControllerBase
             .FirstOrDefaultAsync();
 
         if (issue is null) return NotFound();
+
+        if (User.IsInRole("Driver") && !User.IsInRole("Manager"))
+        {
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized("Invalid token (missing user id).");
+
+            if (issue.ReportedByUserId != currentUserId)
+                return Forbid();
+        }
+
         return Ok(issue);
     }
 
     // POST /api/issue-reports
+    [Authorize(Roles = "Driver,Manager")]
     [HttpPost]
     public async Task<ActionResult<IssueReportReadDto>> Create([FromBody] IssueReportCreateDto dto)
     {
         if (dto.TeamCarId <= 0) return BadRequest("TeamCarId must be a positive integer.");
-        if (dto.ReportedByUserId <= 0) return BadRequest("ReportedByUserId must be a positive integer.");
         if (string.IsNullOrWhiteSpace(dto.Title)) return BadRequest("Title is required.");
 
-        // FK checks
+        if (!TryGetCurrentUserId(out var currentUserId))
+            return Unauthorized("Invalid token (missing user id).");
+
         var carExists = await _db.TeamCars.AnyAsync(c => c.Id == dto.TeamCarId);
         if (!carExists) return BadRequest($"TeamCarId '{dto.TeamCarId}' does not exist.");
-
-        var reporterExists = await _db.Users.AnyAsync(u => u.Id == dto.ReportedByUserId);
-        if (!reporterExists) return BadRequest($"ReportedByUserId '{dto.ReportedByUserId}' does not exist.");
 
         if (dto.CarSessionId.HasValue)
         {
@@ -127,7 +163,7 @@ public class IssueReportsController : ControllerBase
         {
             TeamCarId = dto.TeamCarId,
             CarSessionId = dto.CarSessionId,
-            ReportedByUserId = dto.ReportedByUserId,
+            ReportedByUserId = currentUserId, 
 
             Title = dto.Title.Trim(),
             Description = dto.Description?.Trim() ?? "",
@@ -173,6 +209,7 @@ public class IssueReportsController : ControllerBase
     }
 
     // PUT /api/issue-reports/{id}
+    [Authorize(Roles = "Driver,Manager")]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] IssueReportUpdateDto dto)
     {
@@ -182,7 +219,15 @@ public class IssueReportsController : ControllerBase
         var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == id);
         if (issue is null) return NotFound();
 
-        // FK checks
+        if (User.IsInRole("Driver") && !User.IsInRole("Manager"))
+        {
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized("Invalid token (missing user id).");
+
+            if (issue.ReportedByUserId != currentUserId)
+                return Forbid();
+        }
+
         var carExists = await _db.TeamCars.AnyAsync(c => c.Id == dto.TeamCarId);
         if (!carExists) return BadRequest($"TeamCarId '{dto.TeamCarId}' does not exist.");
 
@@ -215,6 +260,7 @@ public class IssueReportsController : ControllerBase
     }
 
     // DELETE /api/issue-reports/{id}
+    [Authorize(Roles = "Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

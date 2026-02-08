@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RacingGarage.Data;
 
@@ -11,6 +12,7 @@ public class HealthController : ControllerBase
 
     public HealthController(AppDbContext db) => _db = db;
 
+    [AllowAnonymous]
     [HttpGet("db")]
     public async Task<IActionResult> Db()
     {

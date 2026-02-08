@@ -137,6 +137,117 @@ namespace RacingGarage.Migrations
                     b.ToTable("CarSessions");
                 });
 
+            modelBuilder.Entity("RacingGarage.Models.InventoryLocation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("InventoryLocations");
+                });
+
+            modelBuilder.Entity("RacingGarage.Models.InventoryMovement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("InventoryLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("PartId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PerformedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("PerformedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuantityChange")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("WorkOrderId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventoryLocationId");
+
+                    b.HasIndex("PartId");
+
+                    b.HasIndex("PerformedByUserId");
+
+                    b.HasIndex("WorkOrderId");
+
+                    b.ToTable("InventoryMovements");
+                });
+
+            modelBuilder.Entity("RacingGarage.Models.InventoryStock", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("InventoryLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PartId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventoryLocationId");
+
+                    b.HasIndex("PartId", "InventoryLocationId")
+                        .IsUnique();
+
+                    b.ToTable("InventoryStock");
+                });
+
             modelBuilder.Entity("RacingGarage.Models.IssueReport", b =>
                 {
                     b.Property<int>("Id")
@@ -223,6 +334,95 @@ namespace RacingGarage.Migrations
                     b.HasIndex("WorkOrderTaskId");
 
                     b.ToTable("LaborLogs");
+                });
+
+            modelBuilder.Entity("RacingGarage.Models.Part", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("ReorderPoint")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Sku")
+                        .IsUnique();
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("Parts");
+                });
+
+            modelBuilder.Entity("RacingGarage.Models.PartInstallation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("InstalledAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("InstalledByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InventoryLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("PartId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WorkOrderId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstalledByUserId");
+
+                    b.HasIndex("InventoryLocationId");
+
+                    b.HasIndex("PartId");
+
+                    b.HasIndex("WorkOrderId");
+
+                    b.ToTable("PartInstallations");
                 });
 
             modelBuilder.Entity("RacingGarage.Models.Role", b =>
@@ -482,6 +682,58 @@ namespace RacingGarage.Migrations
                     b.Navigation("TeamCar");
                 });
 
+            modelBuilder.Entity("RacingGarage.Models.InventoryMovement", b =>
+                {
+                    b.HasOne("RacingGarage.Models.InventoryLocation", "InventoryLocation")
+                        .WithMany()
+                        .HasForeignKey("InventoryLocationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RacingGarage.Models.Part", "Part")
+                        .WithMany()
+                        .HasForeignKey("PartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RacingGarage.Models.AppUser", "PerformedByUser")
+                        .WithMany()
+                        .HasForeignKey("PerformedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("RacingGarage.Models.WorkOrder", "WorkOrder")
+                        .WithMany()
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("InventoryLocation");
+
+                    b.Navigation("Part");
+
+                    b.Navigation("PerformedByUser");
+
+                    b.Navigation("WorkOrder");
+                });
+
+            modelBuilder.Entity("RacingGarage.Models.InventoryStock", b =>
+                {
+                    b.HasOne("RacingGarage.Models.InventoryLocation", "InventoryLocation")
+                        .WithMany()
+                        .HasForeignKey("InventoryLocationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RacingGarage.Models.Part", "Part")
+                        .WithMany()
+                        .HasForeignKey("PartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("InventoryLocation");
+
+                    b.Navigation("Part");
+                });
+
             modelBuilder.Entity("RacingGarage.Models.IssueReport", b =>
                 {
                     b.HasOne("RacingGarage.Models.CarSession", "CarSession")
@@ -532,6 +784,50 @@ namespace RacingGarage.Migrations
                     b.Navigation("MechanicUser");
 
                     b.Navigation("WorkOrderTask");
+                });
+
+            modelBuilder.Entity("RacingGarage.Models.Part", b =>
+                {
+                    b.HasOne("RacingGarage.Models.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("RacingGarage.Models.PartInstallation", b =>
+                {
+                    b.HasOne("RacingGarage.Models.AppUser", "InstalledByUser")
+                        .WithMany()
+                        .HasForeignKey("InstalledByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("RacingGarage.Models.InventoryLocation", "InventoryLocation")
+                        .WithMany()
+                        .HasForeignKey("InventoryLocationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RacingGarage.Models.Part", "Part")
+                        .WithMany()
+                        .HasForeignKey("PartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RacingGarage.Models.WorkOrder", "WorkOrder")
+                        .WithMany()
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("InstalledByUser");
+
+                    b.Navigation("InventoryLocation");
+
+                    b.Navigation("Part");
+
+                    b.Navigation("WorkOrder");
                 });
 
             modelBuilder.Entity("RacingGarage.Models.UserRole", b =>

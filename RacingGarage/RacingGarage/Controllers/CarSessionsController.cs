@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RacingGarage.Data;
@@ -67,10 +68,10 @@ public class CarSessionsController : ControllerBase
     }
 
     // POST /api/car-sessions
+    [Authorize(Roles = "Driver,Manager")]
     [HttpPost]
     public async Task<ActionResult<CarSessionReadDto>> Create([FromBody] CarSessionCreateDto dto)
     {
-        // Validation
         if (dto.TeamCarId <= 0) return BadRequest("TeamCarId must be a positive integer.");
         if (string.IsNullOrWhiteSpace(dto.TrackName)) return BadRequest("TrackName is required.");
         if (dto.Laps < 0) return BadRequest("Laps cannot be negative.");
@@ -97,8 +98,7 @@ public class CarSessionsController : ControllerBase
 
         _db.CarSessions.Add(session);
         await _db.SaveChangesAsync();
-
-        // Return Read DTO
+        
         var created = await _db.CarSessions
             .AsNoTracking()
             .Where(s => s.Id == session.Id)
@@ -121,6 +121,7 @@ public class CarSessionsController : ControllerBase
     }
 
     // PUT /api/car-sessions/{id}
+    [Authorize(Roles = "Driver,Manager")]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] CarSessionUpdateDto dto)
     {
@@ -153,6 +154,7 @@ public class CarSessionsController : ControllerBase
     }
 
     // DELETE /api/car-sessions/{id}
+    [Authorize(Roles = "Driver,Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

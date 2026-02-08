@@ -18,6 +18,11 @@ public class AppDbContext : DbContext
     public DbSet<LaborLog> LaborLogs => Set<LaborLog>();
     public DbSet<IssueReport> IssueReports => Set<IssueReport>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<InventoryLocation> InventoryLocations => Set<InventoryLocation>();
+    public DbSet<Part> Parts => Set<Part>();
+    public DbSet<InventoryStock> InventoryStock => Set<InventoryStock>();
+    public DbSet<InventoryMovement> InventoryMovements => Set<InventoryMovement>();
+    public DbSet<PartInstallation> PartInstallations => Set<PartInstallation>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -96,5 +101,44 @@ public class AppDbContext : DbContext
             .HasIndex(s => s.Name)
             .IsUnique();
         
+        modelBuilder.Entity<InventoryLocation>()
+            .HasIndex(l => l.Code)
+            .IsUnique();
+        
+        modelBuilder.Entity<Part>()
+            .HasIndex(p => p.Sku)
+            .IsUnique();
+
+        modelBuilder.Entity<Part>()
+            .Property(p => p.UnitCost)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<Part>()
+            .HasOne(p => p.Supplier)
+            .WithMany()
+            .HasForeignKey(p => p.SupplierId)
+            .OnDelete(DeleteBehavior.SetNull);
+        
+        modelBuilder.Entity<InventoryStock>()
+            .HasIndex(s => new { s.PartId, s.InventoryLocationId })
+            .IsUnique();
+
+        modelBuilder.Entity<InventoryMovement>()
+            .HasOne(m => m.WorkOrder)
+            .WithMany()
+            .HasForeignKey(m => m.WorkOrderId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<InventoryMovement>()
+            .HasOne(m => m.PerformedByUser)
+            .WithMany()
+            .HasForeignKey(m => m.PerformedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+        
+        modelBuilder.Entity<PartInstallation>()
+            .HasOne(pi => pi.InstalledByUser)
+            .WithMany()
+            .HasForeignKey(pi => pi.InstalledByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RacingGarage.Data;
@@ -68,6 +69,7 @@ public class WorkOrderTasksController : ControllerBase
     }
 
     // POST /api/work-order-tasks
+    [Authorize(Roles = "Mechanic,Manager")]
     [HttpPost]
     public async Task<ActionResult<WorkOrderTaskReadDto>> Create([FromBody] WorkOrderTaskCreateDto dto)
     {
@@ -109,6 +111,7 @@ public class WorkOrderTasksController : ControllerBase
     }
 
     // PUT /api/work-order-tasks/10
+    [Authorize(Roles = "Mechanic,Manager")]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] WorkOrderTaskUpdateDto dto)
     {
@@ -131,6 +134,7 @@ public class WorkOrderTasksController : ControllerBase
     }
 
     // DELETE /api/work-order-tasks/10
+    [Authorize(Roles = "Mechanic,Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
