@@ -1,5 +1,6 @@
+import type { LoginResponse } from "@/api/auth/types";
+import type { AuthRefreshResponse } from "@/api/users/types";
 import { createContext } from "react";
-import type { LoginResponse } from "@/api/auth";
 
 export type AuthState = {
   token: string | null;
@@ -7,7 +8,7 @@ export type AuthState = {
 };
 
 export type AuthContextValue = AuthState & {
-  setSession: (resp: LoginResponse) => void;
+  setSession: (resp: LoginResponse | AuthRefreshResponse) => void;
   logout: () => void;
 };
 

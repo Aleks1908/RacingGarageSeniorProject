@@ -1,8 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/LoginPage/LoginPage";
-import RequireAuth from "./auth/RequrieAuth";
+import RequireAuth from "./auth/RequireAuth";
 import DashboardPage from "./pages/DashboardPage/DashboardPage";
-import { TeamCarsPage } from "./pages/TeamCarsPage/TeamCarsPage";
 import RequireRole from "./auth/RequireRole";
 import { WorkOrdersPage } from "./pages/WorkOrdersPage/WorkOrdersPage";
 import { WorkOrderDetailsPage } from "./pages/WorkOrderDetailsPage/WorkOrderDetailsPage";
@@ -15,14 +14,15 @@ import { PartsPage } from "./pages/PartsPage/PartsPage";
 import { InventoryMovementsPage } from "./pages/InventoryMovementsPage/InventoryMovementsPage";
 import { PartInstallationsPage } from "./pages/PartInstallationsPage/PartInstallationsPage";
 import { UsersPage } from "./pages/UsersPage/UsersPage";
-import { TeamCarPage } from "./pages/TeamCarPage/TeamCarPage";
+
+import TeamCarsPage from "./pages/TeamCarsPage/TeamCarsPage";
+import TeamCarPage from "./pages/TeamCarPage/TeamCarPage";
 
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Shared */}
       <Route
         path="/dashboard"
         element={
@@ -48,7 +48,6 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Work orders */}
       <Route
         path="/work-orders"
         element={
@@ -66,7 +65,6 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Issue Reports */}
       <Route
         path="/issue-reports"
         element={
@@ -84,7 +82,6 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Inventory */}
       <Route
         path="/inventory"
         element={
@@ -134,7 +131,6 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Users (Manager only) */}
       <Route
         path="/users"
         element={
@@ -144,7 +140,6 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Default */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

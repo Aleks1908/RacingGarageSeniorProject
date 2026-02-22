@@ -20,8 +20,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useNavigate } from "react-router-dom";
-import { login } from "@/api/auth";
 import { useAuth } from "@/auth/useAuth";
+import { login } from "@/api/auth";
 
 const schema = z.object({
   email: z.string().min(1, "Email is required").email("Enter a valid email"),
@@ -47,9 +47,9 @@ export default function LoginPage() {
       const resp = await login(values);
       setSession(resp);
       nav("/dashboard");
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Login failed";
-      alert(message);
+    } catch (e) {
+      const err = e as Error;
+      alert(err.message ?? "Login failed");
     }
   }
 
@@ -96,7 +96,7 @@ export default function LoginPage() {
                 )}
               />
 
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full cursor-pointer">
                 Login
               </Button>
             </form>

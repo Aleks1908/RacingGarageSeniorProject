@@ -1,5 +1,3 @@
-import { apiFetch } from "../api/client";
-
 export type LoginRequest = {
   email: string;
   password: string;
@@ -13,10 +11,3 @@ export type LoginResponse = {
   email: string;
   roles: string[];
 };
-
-export function login(dto: LoginRequest) {
-  return apiFetch<LoginResponse>("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify(dto),
-  });
-}
