@@ -53,3 +53,13 @@ export type IssueReportListParams = {
   status?: string;
   severity?: string;
 };
+
+export type IssueRead = {
+  id: number;
+  title: string;
+  status: string;
+  teamCarId: number;
+  teamCarNumber?: string | null;
+  priority?: string | null;
+  createdAt?: string;
+};

@@ -1,4 +1,5 @@
 import { api } from "../client/client";
+import type { IssueRead } from "./types";
 import type {
   IssueReportCreate,
   IssueReportListParams,
@@ -43,4 +44,21 @@ export function deleteIssueReport(id: number) {
   });
 }
 
+export function listIssues(params?: { status?: string; teamCarId?: number }) {
+  const qs = new URLSearchParams();
+  if (params?.status) qs.set("status", params.status);
+  if (params?.teamCarId) qs.set("teamCarId", String(params.teamCarId));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return api<IssueRead[]>(`/api/issues${suffix}`, { method: "GET" });
+}
+
+export function linkIssueToWorkOrder(
+  issueId: number,
+  linkedWorkOrderId: number | null
+) {
+  return api<void>(`/api/issue-reports/${issueId}/link-work-order`, {
+    method: "POST",
+    body: JSON.stringify({ linkedWorkOrderId }),
+  });
+}
 export type { IssueReportRead } from "./types";
