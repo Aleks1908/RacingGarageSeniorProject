@@ -363,10 +363,9 @@ export function WorkOrderUpsertDialog({
                           {...field}
                           value={String(lockedCar.id)}
                         />
-
                         <div className="rounded-md border px-3 py-2 text-sm">
                           <div className="font-medium">
-                            #{lockedCar.carNumber} — {lockedCar.make}{" "}
+                            #{lockedCar.carNumber} — {lockedCar.make}
                             {lockedCar.model}
                           </div>
                         </div>
@@ -378,7 +377,7 @@ export function WorkOrderUpsertDialog({
                         disabled={saving}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select car" />
                           </SelectTrigger>
                         </FormControl>
@@ -400,45 +399,6 @@ export function WorkOrderUpsertDialog({
 
               <FormField
                 control={form.control}
-                name="linkedIssueId"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-2">
-                    <FormLabel>Link Issue (Open)</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={issuesDisabled}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={issuesPlaceholder} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">No linked issue</SelectItem>
-                        {issuesForSelect.map((i) => (
-                          <SelectItem key={i.id} value={String(i.id)}>
-                            #{i.id} — {i.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    {issuesErr ? (
-                      <div className="text-xs text-destructive">
-                        {issuesErr}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-muted-foreground">
-                        Only <b>Open</b> issues for the selected car are shown.
-                      </div>
-                    )}
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="title"
                 rules={{ required: "Title is required" }}
                 render={({ field }) => (
@@ -452,6 +412,44 @@ export function WorkOrderUpsertDialog({
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="linkedIssueId"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2 mb-4">
+                    <FormLabel>Link Issue (Open)</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={issuesDisabled}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={issuesPlaceholder} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">No linked issue</SelectItem>
+                        {issuesForSelect.map((i) => (
+                          <SelectItem key={i.id} value={String(i.id)}>
+                            #{i.id} — {i.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {issuesErr ? (
+                      <p className="text-xs text-destructive mt-1 -mb-3">
+                        {issuesErr}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1 -mb-3">
+                        Only <b>Open</b> issues for the selected car are shown.
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="description"
@@ -478,7 +476,7 @@ export function WorkOrderUpsertDialog({
                       disabled={saving}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Unassigned" />
                         </SelectTrigger>
                       </FormControl>
@@ -508,8 +506,8 @@ export function WorkOrderUpsertDialog({
                       disabled={saving}
                     >
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select priority" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -537,8 +535,8 @@ export function WorkOrderUpsertDialog({
                       disabled={saving}
                     >
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

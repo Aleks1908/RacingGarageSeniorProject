@@ -265,7 +265,7 @@ export const InventoryPage = () => {
                         </TableCell>
                         <TableCell>
                           <div className="font-medium">
-                            {s.partName}{" "}
+                            {s.partName}
                             <span className="text-muted-foreground">
                               ({s.partSku})
                             </span>
@@ -315,7 +315,7 @@ export const InventoryPage = () => {
                       <TableHead>Date</TableHead>
                       <TableHead>Location</TableHead>
                       <TableHead>Part</TableHead>
-                      <TableHead className="text-right">Δ</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
                       <TableHead>Reason / Audit</TableHead>
                       <TableHead>By</TableHead>
                     </TableRow>
@@ -358,7 +358,7 @@ export const InventoryPage = () => {
 
                             <TableCell>
                               <div className="font-medium">
-                                {m.partName}{" "}
+                                {m.partName}
                                 <span className="text-muted-foreground">
                                   ({m.partSku})
                                 </span>

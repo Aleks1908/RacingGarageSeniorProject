@@ -4,8 +4,11 @@ import { useNavigate } from "react-router-dom";
 import PageLayout from "@/components/PageLayout/PageLayout";
 import { useAuth } from "@/auth/useAuth";
 
-import { deleteSupplier, listSuppliers } from "@/api/suppliers";
-import type { SupplierRead } from "@/api/suppliers/types";
+import {
+  deleteInventoryLocation,
+  listInventoryLocations,
+} from "@/api/inventoryLocations";
+import type { InventoryLocationRead } from "@/api/inventoryLocations/types";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,9 +30,10 @@ import {
   RefreshCcw,
   Trash2,
   Pencil,
-  Truck,
+  MapPin,
 } from "lucide-react";
-import { SupplierUpsertDialog } from "@/components/SupplierUpsertDialog/SupplierUpsertDialog";
+
+import { InventoryLocationUpsertDialog } from "@/components/InventoryLocationUpsertDialog/InventoryLocationUpsertDialog";
 
 function fmtDateTime(v?: string | null) {
   if (!v) return "—";
@@ -37,23 +41,7 @@ function fmtDateTime(v?: string | null) {
   return Number.isNaN(d.getTime()) ? v : d.toLocaleString();
 }
 
-function fmtAddress(s: SupplierRead) {
-  const line1 = (s.addressLine1 ?? "").trim();
-  const line2 = (s.addressLine2 ?? "").trim();
-  const city = (s.city ?? "").trim();
-  const country = (s.country ?? "").trim();
-
-  const lines: string[] = [];
-  if (line1) lines.push(line1);
-  if (line2) lines.push(line2);
-
-  const cityCountry = [city, country].filter(Boolean).join(", ");
-  if (cityCountry) lines.push(cityCountry);
-
-  return lines.length ? lines.join(" • ") : "—";
-}
-
-export default function SuppliersPage() {
+export default function InventoryLocationsPage() {
   const nav = useNavigate();
   const { user } = useAuth();
 
@@ -63,7 +51,7 @@ export default function SuppliersPage() {
     [roles]
   );
 
-  const [items, setItems] = useState<SupplierRead[]>([]);
+  const [items, setItems] = useState<InventoryLocationRead[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -71,16 +59,16 @@ export default function SuppliersPage() {
   const [activeOnly, setActiveOnly] = useState(false);
 
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<SupplierRead | null>(null);
+  const [editing, setEditing] = useState<InventoryLocationRead | null>(null);
 
   async function load() {
     setLoading(true);
     setErr(null);
     try {
-      const data = await listSuppliers({ activeOnly });
+      const data = await listInventoryLocations({ activeOnly });
       setItems(data);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed to load suppliers.");
+      setErr(e instanceof Error ? e.message : "Failed to load locations.");
     } finally {
       setLoading(false);
     }
@@ -95,19 +83,12 @@ export default function SuppliersPage() {
     const needle = q.trim().toLowerCase();
     if (!needle) return items;
 
-    return items.filter((s) => {
-      const name = (s.name ?? "").toLowerCase();
-      const email = (s.contactEmail ?? "").toLowerCase();
-      const phone = (s.phone ?? "").toLowerCase();
-      const city = (s.city ?? "").toLowerCase();
-      const country = (s.country ?? "").toLowerCase();
-
+    return items.filter((l) => {
+      const name = (l.name ?? "").toLowerCase();
+      const code = (l.code ?? "").toLowerCase();
+      const desc = (l.description ?? "").toLowerCase();
       return (
-        name.includes(needle) ||
-        email.includes(needle) ||
-        phone.includes(needle) ||
-        city.includes(needle) ||
-        country.includes(needle)
+        name.includes(needle) || code.includes(needle) || desc.includes(needle)
       );
     });
   }, [items, q]);
@@ -117,25 +98,51 @@ export default function SuppliersPage() {
     setOpen(true);
   }
 
-  function openEdit(row: SupplierRead) {
+  function openEdit(row: InventoryLocationRead) {
     setEditing(row);
     setOpen(true);
   }
 
-  async function onDelete(row: SupplierRead) {
-    const ok = confirm(`Delete supplier "${row.name}"?`);
+  async function onDelete(row: InventoryLocationRead) {
+    const ok = confirm(`Deactivate location "${row.name}"?`);
     if (!ok) return;
 
     try {
-      await deleteSupplier(row.id);
+      await deleteInventoryLocation(row.id);
       await load();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Delete failed");
     }
   }
 
+  if (!user) {
+    return (
+      <PageLayout title="Inventory Locations" subtitle="Location management">
+        <div className="text-sm text-muted-foreground">Please sign in.</div>
+      </PageLayout>
+    );
+  }
+
+  if (!canManage) {
+    return (
+      <PageLayout title="Inventory Locations" subtitle="Location management">
+        <Card className="p-4 border-destructive/40">
+          <div className="flex items-start gap-2 text-sm">
+            <AlertTriangle className="h-4 w-4 mt-0.5" />
+            <div>
+              <div className="font-medium">Access denied</div>
+              <div className="text-muted-foreground">
+                Only Parts Clerks and Managers can manage inventory locations.
+              </div>
+            </div>
+          </div>
+        </Card>
+      </PageLayout>
+    );
+  }
+
   return (
-    <PageLayout title="Suppliers" subtitle="Supplier management">
+    <PageLayout title="Inventory Locations" subtitle="Location management">
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -144,8 +151,8 @@ export default function SuppliersPage() {
               Back
             </Button>
 
-            <Truck className="h-4 w-4" />
-            {loading ? "Loading..." : `${filtered.length} suppliers`}
+            <MapPin className="h-4 w-4" />
+            {loading ? "Loading..." : `${filtered.length} locations`}
           </div>
 
           <div className="flex items-center gap-2">
@@ -154,12 +161,10 @@ export default function SuppliersPage() {
               Refresh
             </Button>
 
-            {canManage && (
-              <Button size="sm" onClick={openCreate}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Supplier
-              </Button>
-            )}
+            <Button size="sm" onClick={openCreate}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Location
+            </Button>
           </div>
         </div>
 
@@ -170,7 +175,7 @@ export default function SuppliersPage() {
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by name, email, phone, city, country..."
+                placeholder="Search by name, code, description..."
               />
             </div>
 
@@ -192,7 +197,7 @@ export default function SuppliersPage() {
             <div className="flex items-start gap-2 text-sm">
               <AlertTriangle className="h-4 w-4 mt-0.5" />
               <div>
-                <div className="font-medium">Couldn’t load suppliers</div>
+                <div className="font-medium">Couldn’t load locations</div>
                 <div className="text-muted-foreground">{err}</div>
               </div>
             </div>
@@ -204,9 +209,8 @@ export default function SuppliersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Address</TableHead>
+                <TableHead className="w-32">Code</TableHead>
+                <TableHead>Description</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="w-28">Active</TableHead>
                 <TableHead className="text-right w-40">Actions</TableHead>
@@ -217,36 +221,35 @@ export default function SuppliersPage() {
               {!loading && filtered.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={6}
                     className="text-center text-muted-foreground py-10"
                   >
-                    No suppliers found.
+                    No locations found.
                   </TableCell>
                 </TableRow>
               )}
 
               {filtered
                 .slice()
-                .sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id)
-                .map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium">{s.name}</TableCell>
-
-                    <TableCell>{s.contactEmail ?? "—"}</TableCell>
-
-                    <TableCell>{s.phone ?? "—"}</TableCell>
-
-                    <TableCell className="text-sm text-muted-foreground">
-                      {fmtAddress(s)}
+                .sort(
+                  (a, b) =>
+                    (a.name ?? "").localeCompare(b.name ?? "") || a.id - b.id
+                )
+                .map((l) => (
+                  <TableRow key={l.id}>
+                    <TableCell className="font-medium">{l.name}</TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {l.code}
                     </TableCell>
-
                     <TableCell className="text-sm text-muted-foreground">
-                      {fmtDateTime(s.createdAt)}
+                      {l.description?.trim() ? l.description : "—"}
                     </TableCell>
-
+                    <TableCell className="text-sm text-muted-foreground">
+                      {fmtDateTime(l.createdAt)}
+                    </TableCell>
                     <TableCell>
-                      <Badge variant={s.isActive ? "secondary" : "outline"}>
-                        {s.isActive ? "Active" : "Inactive"}
+                      <Badge variant={l.isActive ? "secondary" : "outline"}>
+                        {l.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
 
@@ -255,9 +258,8 @@ export default function SuppliersPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          disabled={!canManage}
-                          onClick={() => openEdit(s)}
-                          title={canManage ? "Edit" : "No permission"}
+                          onClick={() => openEdit(l)}
+                          title="Edit"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -265,9 +267,8 @@ export default function SuppliersPage() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          disabled={!canManage}
-                          onClick={() => onDelete(s)}
-                          title={canManage ? "Delete" : "No permission"}
+                          onClick={() => onDelete(l)}
+                          title="Deactivate"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -279,18 +280,16 @@ export default function SuppliersPage() {
           </Table>
         </Card>
 
-        {canManage && (
-          <SupplierUpsertDialog
-            open={open}
-            onOpenChange={(v) => {
-              setOpen(v);
-              if (!v) setEditing(null);
-            }}
-            editing={editing}
-            canEdit={canManage}
-            onSaved={load}
-          />
-        )}
+        <InventoryLocationUpsertDialog
+          open={open}
+          onOpenChange={(v) => {
+            setOpen(v);
+            if (!v) setEditing(null);
+          }}
+          editing={editing}
+          canEdit={canManage}
+          onSaved={load}
+        />
       </div>
     </PageLayout>
   );

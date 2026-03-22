@@ -84,7 +84,7 @@ export function CarSessionUpsertDialog({
       date: todayYYYYMMDD(),
       trackName: "",
       driverUserId: "",
-      laps: "0",
+      laps: "",
       notes: "",
     },
   });
@@ -124,7 +124,10 @@ export function CarSessionUpsertDialog({
         date: editing.date ?? todayYYYYMMDD(),
         trackName: editing.trackName ?? "",
         driverUserId: editing.driverUserId ? String(editing.driverUserId) : "",
-        laps: String(editing.laps ?? 0),
+        laps:
+          editing.laps == null || editing.laps === 0
+            ? ""
+            : String(editing.laps),
         notes: editing.notes ?? "",
       });
     } else {
@@ -137,7 +140,7 @@ export function CarSessionUpsertDialog({
         date: todayYYYYMMDD(),
         trackName: "",
         driverUserId: "",
-        laps: "0",
+        laps: "",
         notes: "",
       });
     }
@@ -173,26 +176,20 @@ export function CarSessionUpsertDialog({
 
     setSaving(true);
     try {
+      const payload = {
+        teamCarId,
+        sessionType: (v.sessionType ?? "").trim() || "Practice",
+        date: (v.date ?? "").trim() || todayYYYYMMDD(),
+        trackName,
+        driverUserId,
+        laps,
+        notes: (v.notes ?? "").trim() || null,
+      };
+
       if (editing) {
-        await updateCarSession(editing.id, {
-          teamCarId,
-          sessionType: (v.sessionType ?? "").trim() || "Practice",
-          date: (v.date ?? "").trim() || todayYYYYMMDD(),
-          trackName,
-          driverUserId,
-          laps,
-          notes: (v.notes ?? "").trim() || null,
-        });
+        await updateCarSession(editing.id, payload);
       } else {
-        await createCarSession({
-          teamCarId,
-          sessionType: (v.sessionType ?? "").trim() || "Practice",
-          date: (v.date ?? "").trim() || todayYYYYMMDD(),
-          trackName,
-          driverUserId,
-          laps,
-          notes: (v.notes ?? "").trim() || null,
-        });
+        await createCarSession(payload);
       }
 
       onOpenChange(false);
@@ -213,6 +210,13 @@ export function CarSessionUpsertDialog({
     }
     return "";
   }, [lockedCar, editing]);
+
+  const driverOptions = useMemo(() => {
+    return drivers
+      .slice()
+      .filter((u) => u.isActive && (u.roles ?? []).includes("Driver"))
+      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+  }, [drivers]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -235,7 +239,6 @@ export function CarSessionUpsertDialog({
                     {carIsLocked ? (
                       <>
                         <input type="hidden" {...field} />
-
                         <div className="rounded-md border px-3 py-2 text-sm">
                           <div className="font-medium">{lockedLabel}</div>
                         </div>
@@ -247,10 +250,11 @@ export function CarSessionUpsertDialog({
                         disabled={!canEdit || saving}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select car" />
                           </SelectTrigger>
                         </FormControl>
+
                         <SelectContent>
                           {cars.map((c) => (
                             <SelectItem key={c.id} value={String(c.id)}>
@@ -341,27 +345,18 @@ export function CarSessionUpsertDialog({
                       disabled={!canEdit || saving}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Unassigned" />
                         </SelectTrigger>
                       </FormControl>
 
                       <SelectContent>
                         <SelectItem value={NONE}>Unassigned</SelectItem>
-                        {drivers
-                          .slice()
-                          .filter(
-                            (u) =>
-                              u.isActive && (u.roles ?? []).includes("Driver")
-                          )
-                          .sort((a, b) =>
-                            (a.name ?? "").localeCompare(b.name ?? "")
-                          )
-                          .map((u) => (
-                            <SelectItem key={u.id} value={String(u.id)}>
-                              {u.name}
-                            </SelectItem>
-                          ))}
+                        {driverOptions.map((u) => (
+                          <SelectItem key={u.id} value={String(u.id)}>
+                            {u.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
 

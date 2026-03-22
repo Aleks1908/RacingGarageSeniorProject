@@ -7,14 +7,73 @@ type ApiError = {
   message: string;
 };
 
-async function readJsonSafe(res: Response) {
+type ErrorBody =
+  | string
+  | null
+  | {
+      message?: unknown;
+      title?: unknown;
+      errors?: unknown;
+      detail?: unknown;
+      [k: string]: unknown;
+    };
+
+function toMessage(v: unknown): string | null {
+  if (v == null) return null;
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return null;
+}
+
+function stringifyErrors(errors: unknown): string | null {
+  if (!errors || typeof errors !== "object") return null;
+
+  const rec = errors as Record<string, unknown>;
+  const parts: string[] = [];
+
+  for (const [key, val] of Object.entries(rec)) {
+    if (Array.isArray(val)) {
+      const msgs = val.map(toMessage).filter((x): x is string => !!x);
+      if (msgs.length) parts.push(`${key}: ${msgs.join(", ")}`);
+    } else {
+      const msg = toMessage(val);
+      if (msg) parts.push(`${key}: ${msg}`);
+    }
+  }
+
+  return parts.length ? parts.join(" • ") : null;
+}
+
+async function readJsonSafe(res: Response): Promise<ErrorBody> {
   const text = await res.text();
   if (!text) return null;
   try {
-    return JSON.parse(text);
+    return JSON.parse(text) as Record<string, unknown>;
   } catch {
     return text;
   }
+}
+
+function extractErrorMessage(body: ErrorBody): string {
+  if (typeof body === "string") return body;
+
+  if (body && typeof body === "object") {
+    const msg =
+      toMessage(body.message) ??
+      toMessage(body.title) ??
+      toMessage(body.detail) ??
+      stringifyErrors(body.errors);
+
+    if (msg) return msg;
+
+    try {
+      return JSON.stringify(body);
+    } catch {
+      return "Request failed";
+    }
+  }
+
+  return "Request failed";
 }
 
 export async function api<T>(
@@ -33,36 +92,39 @@ export async function api<T>(
     headers.set("Content-Type", "application/json");
   }
 
-  // Attach token by default unless auth: false
   const useAuth = options.auth !== false;
   if (useAuth) {
     const token = localStorage.getItem("accessToken");
     if (token) headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const res = await fetch(url, {
-    ...options,
-    headers,
-  });
+  const res = await fetch(url, { ...options, headers });
 
   if (!res.ok) {
     const body = await readJsonSafe(res);
-
-    const msg =
-      typeof body === "string"
-        ? body
-        : body?.message ?? body?.title ?? JSON.stringify(body ?? {});
-
     const err: ApiError = {
       status: res.status,
-      message: msg || "Request failed",
+      message: extractErrorMessage(body),
     };
-    // Throw error
     throw Object.assign(new Error(err.message), err);
   }
 
-  if (res.status === 204) return undefined as T;
+  if (res.status === 204 || res.status === 205) return undefined as T;
 
-  const data = (await res.json()) as T;
-  return data;
+  const contentLength = res.headers.get("content-length");
+  if (contentLength === "0") return undefined as T;
+
+  const contentType = res.headers.get("content-type") ?? "";
+  const text = await res.text();
+  if (!text) return undefined as T;
+
+  if (contentType.includes("application/json")) {
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      throw new Error("Invalid JSON response");
+    }
+  }
+
+  return text as unknown as T;
 }

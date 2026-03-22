@@ -278,7 +278,7 @@ export function InventoryAdjustDialog({
             disabled={workOrderSelectDisabled}
           >
             <FormControl>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder={workOrderPlaceholder} />
               </SelectTrigger>
             </FormControl>
@@ -311,7 +311,7 @@ export function InventoryAdjustDialog({
         {stock ? (
           <div className="space-y-3">
             <div className="text-sm text-muted-foreground">
-              Current qty:{" "}
+              Current qty:
               <span className="font-medium text-foreground">
                 {stock.quantity}
               </span>
@@ -324,16 +324,16 @@ export function InventoryAdjustDialog({
               >
                 <div className="grid gap-3 sm:grid-cols-2">
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
+                    <FormLabel>Part</FormLabel>
                     <div className="text-sm font-medium">
-                      {stock.locationCode}
+                      {stock.partSku} — {stock.partName}
                     </div>
                   </FormItem>
 
                   <FormItem>
-                    <FormLabel>Part</FormLabel>
+                    <FormLabel>Location</FormLabel>
                     <div className="text-sm font-medium">
-                      {stock.partSku} — {stock.partName}
+                      {stock.locationCode}
                     </div>
                   </FormItem>
 
@@ -447,56 +447,6 @@ export function InventoryAdjustDialog({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <FormField
                     control={form.control}
-                    name="inventoryLocationId"
-                    rules={{
-                      validate: (x) =>
-                        (x ?? "").trim() ? true : "Select a location.",
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location</FormLabel>
-
-                        {lockedLocation ? (
-                          <>
-                            <input
-                              type="hidden"
-                              {...field}
-                              value={String(lockedLocation.id)}
-                            />
-
-                            <div className="rounded-md border px-3 py-2 text-sm">
-                              <div className="font-medium">
-                                {lockedLocation.code} — {lockedLocation.name}
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <Select
-                            value={field.value ?? ""}
-                            onValueChange={field.onChange}
-                            disabled={!canEdit || saving}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select location" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {locations!.map((l) => (
-                                <SelectItem key={l.id} value={String(l.id)}>
-                                  {l.code} — {l.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
                     name="partId"
                     rules={{
                       validate: (x) =>
@@ -527,7 +477,7 @@ export function InventoryAdjustDialog({
                             disabled={!canEdit || saving}
                           >
                             <FormControl>
-                              <SelectTrigger>
+                              <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select part" />
                               </SelectTrigger>
                             </FormControl>
@@ -550,6 +500,58 @@ export function InventoryAdjustDialog({
                       </FormItem>
                     )}
                   />
+
+                  <FormField
+                    control={form.control}
+                    name="inventoryLocationId"
+                    rules={{
+                      validate: (x) =>
+                        (x ?? "").trim() ? true : "Select a location.",
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+
+                        {lockedLocation ? (
+                          <>
+                            <input
+                              type="hidden"
+                              {...field}
+                              value={String(lockedLocation.id)}
+                            />
+
+                            <div className="rounded-md border px-3 py-2 text-sm">
+                              <div className="font-medium">
+                                {lockedLocation.code} — {lockedLocation.name}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <Select
+                            value={field.value ?? ""}
+                            onValueChange={field.onChange}
+                            disabled={!canEdit || saving}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select location" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {locations!.map((l) => (
+                                <SelectItem key={l.id} value={String(l.id)}>
+                                  {l.code} — {l.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="quantityChange"

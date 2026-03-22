@@ -380,7 +380,7 @@ export function LaborLogUpsertDialog({
                           Mark task as completed
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Saves the labor log and sets the task status to{" "}
+                          Saves the labor log and sets the task status to
                           <b>Done</b>.
                         </div>
                       </div>

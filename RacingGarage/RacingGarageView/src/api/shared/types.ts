@@ -6,6 +6,8 @@ export type WorkOrderRead = {
   createdByUserId: number;
   createdByName: string;
 
+  linkedIssueId?: number | null;
+
   assignedToUserId: number | null;
   assignedToName: string | null;
 

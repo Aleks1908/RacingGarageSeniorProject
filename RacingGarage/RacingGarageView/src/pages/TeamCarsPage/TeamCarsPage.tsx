@@ -3,13 +3,7 @@ import { useNavigate } from "react-router-dom";
 import PageLayout from "@/components/PageLayout/PageLayout";
 import { useAuth } from "@/auth/useAuth";
 
-import {
-  createTeamCar,
-  deleteTeamCar,
-  listTeamCars,
-  updateTeamCar,
-  type TeamCarRead,
-} from "@/api/teamCars";
+import { deleteTeamCar, listTeamCars } from "@/api/teamCars";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,13 +16,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
   AlertTriangle,
   Plus,
   RefreshCcw,
@@ -37,38 +24,8 @@ import {
   Car,
   ArrowLeft,
 } from "lucide-react";
-
-import { useForm } from "react-hook-form";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-
-type CarForm = {
-  carNumber: string;
-  nickname: string;
-  make: string;
-  model: string;
-  year: number;
-  carClass: string;
-  status: string;
-  odometerKm: number;
-};
-
-const defaultValues: CarForm = {
-  carNumber: "",
-  nickname: "",
-  make: "",
-  model: "",
-  year: new Date().getFullYear(),
-  carClass: "",
-  status: "Active",
-  odometerKm: 0,
-};
+import type { TeamCarRead } from "@/api/teamCars/types";
+import { TeamCarUpsertDialog } from "@/components/TeamCarUpsertDialog/TeamCarUpsertDialog";
 
 export default function TeamCarsPage() {
   const nav = useNavigate();
@@ -86,9 +43,6 @@ export default function TeamCarsPage() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TeamCarRead | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  const form = useForm<CarForm>({ defaultValues });
 
   async function refresh() {
     setLoading(true);
@@ -109,45 +63,13 @@ export default function TeamCarsPage() {
 
   function openCreate() {
     setEditing(null);
-    form.reset(defaultValues);
     setOpen(true);
   }
 
   function openEdit(row: TeamCarRead) {
     setEditing(row);
-    form.reset({
-      carNumber: row.carNumber,
-      nickname: row.nickname ?? "",
-      make: row.make ?? "",
-      model: row.model ?? "",
-      year: row.year,
-      carClass: row.carClass ?? "",
-      status: row.status ?? "Active",
-      odometerKm: row.odometerKm ?? 0,
-    });
     setOpen(true);
   }
-
-  async function onSubmit(values: CarForm) {
-    setSaving(true);
-    try {
-      if (!values.carNumber.trim()) throw new Error("Car number is required.");
-
-      if (editing) {
-        await updateTeamCar(editing.id, values);
-      } else {
-        await createTeamCar(values);
-      }
-
-      setOpen(false);
-      await refresh();
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Save failed");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function onDelete(row: TeamCarRead) {
     const ok = confirm(`Delete car ${row.carNumber}? This cannot be undone.`);
     if (!ok) return;
@@ -165,11 +87,7 @@ export default function TeamCarsPage() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => nav("/dashboard")}
-            >
+            <Button variant="outline" size="sm" onClick={() => nav(-1)}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
@@ -277,163 +195,17 @@ export default function TeamCarsPage() {
           </Table>
         </Card>
 
-        {/* Create/Edit Dialog */}
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="sm:max-w-140">
-            <DialogHeader>
-              <DialogTitle>{editing ? "Edit Car" : "New Car"}</DialogTitle>
-            </DialogHeader>
-
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4"
-              >
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="carNumber"
-                    rules={{ required: "Car number is required" }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Car Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. 27" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="nickname"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nickname</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. The Rocket" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="make"
-                    rules={{ required: "Make is required" }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Make</FormLabel>
-                        <FormControl>
-                          <Input placeholder="BMW" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="model"
-                    rules={{ required: "Model is required" }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Model</FormLabel>
-                        <FormControl>
-                          <Input placeholder="E46" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="year"
-                    rules={{
-                      min: { value: 1950, message: "Year looks too low" },
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Year</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="carClass"
-                    rules={{ required: "Class is required" }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Class</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="GT4 / Time Attack / ..."
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Active" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="odometerKm"
-                    rules={{ min: { value: 0, message: "Cannot be negative" } }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Odometer (km)</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={saving}>
-                    {saving
-                      ? "Saving..."
-                      : editing
-                      ? "Save Changes"
-                      : "Create Car"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        {canManage && (
+          <TeamCarUpsertDialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) setEditing(null);
+            }}
+            editing={editing}
+            onSaved={refresh}
+          />
+        )}
       </div>
     </PageLayout>
   );

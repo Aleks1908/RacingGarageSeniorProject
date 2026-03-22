@@ -21,6 +21,7 @@ import {
   ArrowRight,
   Flag,
   Settings,
+  MapPin,
 } from "lucide-react";
 import PageLayout from "@/components/PageLayout/PageLayout";
 
@@ -97,6 +98,14 @@ export default function DashboardPage() {
         cta: "Open",
       },
       {
+        title: "Inventory Locations",
+        desc: "Manage inventory storage locations",
+        to: "/inventory-locations",
+        allow: ["Manager", "PartsClerk"],
+        icon: <MapPin className="h-5 w-5" />,
+        cta: "Open",
+      },
+      {
         title: "User Settings",
         desc: "Manage your profile and password",
         to: "/user-settings",
@@ -104,6 +113,7 @@ export default function DashboardPage() {
         icon: <Settings className="h-5 w-5" />,
         cta: "Open",
       },
+
       {
         title: "Users",
         desc: "Create users, assign roles",

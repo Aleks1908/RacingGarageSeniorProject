@@ -37,6 +37,9 @@ export type TeamCarSummary = {
   model: string;
   year: number;
   status: string;
+  nickname: string;
+  carClass: string;
+  odometerKm: number;
 };
 
 export type TeamCarDashboard = {

@@ -379,7 +379,7 @@ export const WorkOrderDetailsPage = () => {
 
                   {carNickname ? (
                     <div className="text-xs font-medium text-muted-foreground">
-                      Nickname:{" "}
+                      Nickname:
                       <span className="font-medium text-muted-foreground">
                         {carNickname}
                       </span>
@@ -689,13 +689,13 @@ export const WorkOrderDetailsPage = () => {
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className="font-medium">
-                                {pi.partName}{" "}
+                                {pi.partName}
                                 <span className="text-muted-foreground">
                                   ({pi.partSku})
                                 </span>
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                x{pi.quantity} • {pi.locationCode} •{" "}
+                                x{pi.quantity} • {pi.locationCode} •
                                 {fmtDateTime(pi.installedAt)}
                               </div>
                               {pi.notes ? (

@@ -3,6 +3,7 @@ import type {
   WorkOrderTaskRead,
   LaborLogRead,
   PartInstallationRead,
+  IssueReportRead,
 } from "@/api/shared/types";
 
 export type WorkOrderCreate = {
@@ -42,4 +43,6 @@ export type WorkOrderDetails = {
   partInstallations: PartInstallationRead[];
   totalLaborMinutes: number;
   totalInstalledPartsQty: number;
+  linkedIssueId: number | null;
+  linkedIssue: IssueReportRead | null;
 };

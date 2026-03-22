@@ -273,7 +273,7 @@ export function IssueReportUpsertDialog({
                         />
                         <div className="rounded-md border px-3 py-2 text-sm">
                           <div className="font-medium">
-                            #{lockedCar.carNumber} — {lockedCar.make}{" "}
+                            #{lockedCar.carNumber} — {lockedCar.make}
                             {lockedCar.model}
                           </div>
                         </div>
@@ -285,7 +285,7 @@ export function IssueReportUpsertDialog({
                         disabled={!canEdit || saving}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select car" />
                           </SelectTrigger>
                         </FormControl>
@@ -313,14 +313,12 @@ export function IssueReportUpsertDialog({
                     <FormLabel>Session (optional)</FormLabel>
 
                     <Select
-                      value={
-                        (field.value ?? "").trim() === "" ? NONE : field.value
-                      }
+                      value={field.value ?? ""}
                       onValueChange={(v) => field.onChange(v === NONE ? "" : v)}
                       disabled={saving || sessionsLoading || !selectedCarId}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue
                             placeholder={
                               !selectedCarId
@@ -335,7 +333,6 @@ export function IssueReportUpsertDialog({
 
                       <SelectContent>
                         <SelectItem value={NONE}>Unassigned</SelectItem>
-
                         {sessionsForCar.map((s) => (
                           <SelectItem key={s.id} value={String(s.id)}>
                             {fmtSessionLabel(s)}
@@ -352,6 +349,36 @@ export function IssueReportUpsertDialog({
                       </div>
                     ) : null}
 
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="severity"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Severity</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={saving}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select severity" />
+                        </SelectTrigger>
+                      </FormControl>
+
+                      <SelectContent>
+                        {severities.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -394,41 +421,12 @@ export function IssueReportUpsertDialog({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="severity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Severity</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={saving}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {severities.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {editing ? (
                 <FormField
                   control={form.control}
                   name="status"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="sm:col-span-2">
                       <FormLabel>Status</FormLabel>
                       <Select
                         value={field.value}
@@ -438,10 +436,11 @@ export function IssueReportUpsertDialog({
                         disabled={saving || !canEdit}
                       >
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select status" />
                           </SelectTrigger>
                         </FormControl>
+
                         <SelectContent>
                           {EDIT_STATUSES.map((s) => (
                             <SelectItem key={s} value={s}>

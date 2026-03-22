@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/form";
 
 import type { PartRead, PartCreate, PartUpdate } from "@/api/parts/types";
-
 import { createPart, updatePart } from "@/api/parts";
 import type { SupplierRead } from "@/api/suppliers/types";
 
@@ -62,14 +61,19 @@ export function PartsUpsertDialog({
 }: Props) {
   const [saving, setSaving] = useState(false);
 
+  const activeSuppliers = useMemo(
+    () => suppliers.filter((s) => s.isActive),
+    [suppliers]
+  );
+
   const form = useForm<PartForm>({
     defaultValues: {
       name: "",
       sku: "",
       category: "",
-      unitCost: "0",
-      reorderPoint: "0",
-      supplierId: "none",
+      unitCost: "",
+      reorderPoint: "",
+      supplierId: "",
       isActive: true,
     },
   });
@@ -82,9 +86,15 @@ export function PartsUpsertDialog({
         name: editing.name ?? "",
         sku: editing.sku ?? "",
         category: editing.category ?? "",
-        unitCost: String(editing.unitCost ?? 0),
-        reorderPoint: String(editing.reorderPoint ?? 0),
-        supplierId: editing.supplierId ? String(editing.supplierId) : "none",
+        unitCost:
+          editing.unitCost != null && editing.unitCost !== 0
+            ? String(editing.unitCost)
+            : "",
+        reorderPoint:
+          editing.reorderPoint != null && editing.reorderPoint !== 0
+            ? String(editing.reorderPoint)
+            : "",
+        supplierId: editing.supplierId ? String(editing.supplierId) : "",
         isActive: editing.isActive ?? true,
       });
     } else {
@@ -92,9 +102,9 @@ export function PartsUpsertDialog({
         name: "",
         sku: "",
         category: "",
-        unitCost: "0",
-        reorderPoint: "0",
-        supplierId: "none",
+        unitCost: "",
+        reorderPoint: "",
+        supplierId: "",
         isActive: true,
       });
     }
@@ -106,9 +116,9 @@ export function PartsUpsertDialog({
   }, [editing]);
 
   async function onSubmit(v: PartForm) {
-    const name = v.name.trim();
-    const sku = v.sku.trim().toUpperCase();
-    const category = v.category.trim();
+    const name = (v.name ?? "").trim();
+    const sku = (v.sku ?? "").trim().toUpperCase();
+    const category = (v.category ?? "").trim();
 
     if (!name) {
       form.setError("name", { message: "Name is required." });
@@ -123,13 +133,15 @@ export function PartsUpsertDialog({
       return;
     }
 
-    const unitCost = Number(v.unitCost);
+    const unitCostRaw = (v.unitCost ?? "").trim();
+    const unitCost = unitCostRaw === "" ? 0 : Number(unitCostRaw);
     if (!Number.isFinite(unitCost) || unitCost < 0) {
       form.setError("unitCost", { message: "Unit cost must be 0 or more." });
       return;
     }
 
-    const reorderPoint = Number(v.reorderPoint);
+    const reorderRaw = (v.reorderPoint ?? "").trim();
+    const reorderPoint = reorderRaw === "" ? 0 : Number(reorderRaw);
     if (!Number.isFinite(reorderPoint) || reorderPoint < 0) {
       form.setError("reorderPoint", {
         message: "Reorder point must be 0 or more.",
@@ -137,10 +149,15 @@ export function PartsUpsertDialog({
       return;
     }
 
-    const supplierId = v.supplierId === "none" ? null : Number(v.supplierId);
+    const supplierIdNum = Number((v.supplierId ?? "").trim());
+    if (!supplierIdNum || !Number.isFinite(supplierIdNum)) {
+      form.setError("supplierId", { message: "Supplier is required." });
+      return;
+    }
 
-    if (supplierId !== null && !Number.isFinite(supplierId)) {
-      form.setError("supplierId", { message: "Supplier must be a number." });
+    const isValidSupplier = activeSuppliers.some((s) => s.id === supplierIdNum);
+    if (!isValidSupplier) {
+      form.setError("supplierId", { message: "Select an active supplier." });
       return;
     }
 
@@ -153,7 +170,7 @@ export function PartsUpsertDialog({
           category,
           unitCost,
           reorderPoint,
-          supplierId,
+          supplierId: supplierIdNum,
           isActive: !!v.isActive,
         };
         await updatePart(editing.id, dto);
@@ -164,7 +181,7 @@ export function PartsUpsertDialog({
           category,
           unitCost,
           reorderPoint,
-          supplierId,
+          supplierId: supplierIdNum,
         };
         await createPart(dto);
       }
@@ -177,6 +194,8 @@ export function PartsUpsertDialog({
       setSaving(false);
     }
   }
+
+  const supplierDisabled = saving || activeSuppliers.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -260,8 +279,10 @@ export function PartsUpsertDialog({
                         step="0.01"
                         min="0"
                         inputMode="decimal"
+                        placeholder="e.g. 199.99"
                         disabled={saving}
-                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -281,8 +302,10 @@ export function PartsUpsertDialog({
                         step="1"
                         min="0"
                         inputMode="numeric"
+                        placeholder="e.g. 5"
                         disabled={saving}
-                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -293,23 +316,32 @@ export function PartsUpsertDialog({
               <FormField
                 control={form.control}
                 name="supplierId"
+                rules={{
+                  validate: (v) => !!Number(v) || "Supplier is required.",
+                }}
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Supplier (optional)</FormLabel>
+                    <FormLabel>Supplier</FormLabel>
                     <Select
-                      value={field.value}
+                      value={field.value ?? ""}
                       onValueChange={field.onChange}
-                      disabled={saving}
+                      disabled={supplierDisabled}
                     >
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="None" />
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={
+                              activeSuppliers.length === 0
+                                ? "No active suppliers available"
+                                : "Select supplier"
+                            }
+                          />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {suppliers
-                          .filter((s) => s.isActive)
+                        {activeSuppliers
+                          .slice()
+                          .sort((a, b) => a.name.localeCompare(b.name))
                           .map((s) => (
                             <SelectItem key={s.id} value={String(s.id)}>
                               {s.name}
@@ -357,7 +389,10 @@ export function PartsUpsertDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button
+                type="submit"
+                disabled={saving || activeSuppliers.length === 0}
+              >
                 {saving
                   ? "Saving..."
                   : editing
@@ -365,6 +400,13 @@ export function PartsUpsertDialog({
                   : "Create part"}
               </Button>
             </div>
+
+            {activeSuppliers.length === 0 && (
+              <div className="text-xs text-muted-foreground">
+                You need to create an <b>active supplier</b> before you can
+                create parts.
+              </div>
+            )}
           </form>
         </Form>
       </DialogContent>

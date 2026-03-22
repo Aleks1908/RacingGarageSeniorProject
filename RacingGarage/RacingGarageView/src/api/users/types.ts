@@ -17,3 +17,19 @@ export type UserCreate = {
 export type UserSetRole = {
   role: string;
 };
+
+export type UpdateUserDto = {
+  name: string;
+  email: string;
+  oldPassword: string;
+};
+
+export type ChangeUserPasswordDto = {
+  oldPassword: string;
+  newPassword: string;
+};
+
+export type AuthRefreshResponse = {
+  token: string;
+  user: UserRead;
+};
