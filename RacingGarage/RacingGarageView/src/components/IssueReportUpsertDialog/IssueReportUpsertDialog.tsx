@@ -282,7 +282,7 @@ export function IssueReportUpsertDialog({
                       <Select
                         value={field.value ?? ""}
                         onValueChange={field.onChange}
-                        disabled={!canEdit || saving}
+                        disabled={saving}
                       >
                         <FormControl>
                           <SelectTrigger className="w-full">

@@ -25,6 +25,9 @@ public class WorkOrder
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? DueDate { get; set; }
     public DateTime? ClosedAt { get; set; }
+    public int? LinkedIssueId { get; set; }
+    
+    public IssueReport? LinkedIssue { get; set; }  
 
     public ICollection<WorkOrderTask> Tasks { get; set; } = new List<WorkOrderTask>();
 }

@@ -52,3 +52,8 @@ public sealed class IssueReportUpdateDto
     public int? LinkedWorkOrderId { get; init; }
     public DateTime? ClosedAt { get; init; }
 }
+
+public sealed class IssueReportLinkWorkOrderDto
+{
+    public int? LinkedWorkOrderId { get; init; } // null = unlink
+}

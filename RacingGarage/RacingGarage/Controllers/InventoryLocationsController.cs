@@ -127,7 +127,7 @@ public class InventoryLocationsController : ControllerBase
         return NoContent();
     }
 
-    // DELETE /api/inventory-locations/{id} (soft delete)
+    // DELETE /api/inventory-locations/{id} (hard delete)
     [Authorize(Roles = "PartsClerk,Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
@@ -135,8 +135,9 @@ public class InventoryLocationsController : ControllerBase
         var loc = await _db.InventoryLocations.FirstOrDefaultAsync(l => l.Id == id);
         if (loc is null) return NotFound();
 
-        loc.IsActive = false;
+        _db.InventoryLocations.Remove(loc);
         await _db.SaveChangesAsync();
+
         return NoContent();
     }
 }

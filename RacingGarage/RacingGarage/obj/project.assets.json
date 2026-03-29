@@ -2780,11 +2780,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/RacingGarage.csproj",
+      "projectUniqueName": "/Users/aleks4o/infsenior/RacingGarage/RacingGarage/RacingGarage/RacingGarage.csproj",
       "projectName": "RacingGarage",
-      "projectPath": "/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/RacingGarage.csproj",
+      "projectPath": "/Users/aleks4o/infsenior/RacingGarage/RacingGarage/RacingGarage/RacingGarage.csproj",
       "packagesPath": "/Users/aleks4o/.nuget/packages/",
-      "outputPath": "/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/obj/",
+      "outputPath": "/Users/aleks4o/infsenior/RacingGarage/RacingGarage/RacingGarage/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/aleks4o/.nuget/NuGet/NuGet.Config"

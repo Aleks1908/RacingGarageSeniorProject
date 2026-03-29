@@ -3,20 +3,20 @@ import LoginPage from "./pages/LoginPage/LoginPage";
 import RequireAuth from "./auth/RequireAuth";
 import DashboardPage from "./pages/DashboardPage/DashboardPage";
 import RequireRole from "./auth/RequireRole";
-import { WorkOrdersPage } from "./pages/WorkOrdersPage/WorkOrdersPage";
-import { WorkOrderDetailsPage } from "./pages/WorkOrderDetailsPage/WorkOrderDetailsPage";
 import { IssueReportsPage } from "./pages/IssueReportsPage/IssueReportsPage";
-import { NewIssueReportPage } from "./pages/NewIssueReportPage/NewIssueReportPage";
 import { InventoryPage } from "./pages/InventoryPage/InventoryPage";
 import { ReorderPage } from "./pages/ReorderPage/ReorderPage";
-import { SuppliersPage } from "./pages/SuppliersPage/SuppliersPage";
 import { PartsPage } from "./pages/PartsPage/PartsPage";
-import { InventoryMovementsPage } from "./pages/InventoryMovementsPage/InventoryMovementsPage";
 import { PartInstallationsPage } from "./pages/PartInstallationsPage/PartInstallationsPage";
 import { UsersPage } from "./pages/UsersPage/UsersPage";
-
 import TeamCarsPage from "./pages/TeamCarsPage/TeamCarsPage";
 import TeamCarPage from "./pages/TeamCarPage/TeamCarPage";
+import WorkOrdersPage from "./pages/WorkOrdersPage/WorkOrdersPage";
+import SuppliersPage from "./pages/SuppliersPage/SuppliersPage";
+import { WorkOrderDetailsPage } from "./pages/WorkOrderDetailsPage/WorkOrderDetailsPage";
+import CarSessionsPage from "./pages/CarSessionsPage/CarSessionsPage";
+import UserSettingsPage from "./pages/UserSettingsPage/UserSettingsPage";
+import InventoryLocationsPage from "./pages/InventoryLocationsPage/InventoryLocationsPage";
 
 export default function AppRoutes() {
   return (
@@ -31,6 +31,7 @@ export default function AppRoutes() {
           </RequireAuth>
         }
       />
+      <Route path="/user-settings" element={<UserSettingsPage />} />
       <Route
         path="/team-cars"
         element={
@@ -47,13 +48,20 @@ export default function AppRoutes() {
           </RequireAuth>
         }
       />
-
+      <Route
+        path="/car-sessions"
+        element={
+          <RequireAuth>
+            <CarSessionsPage />
+          </RequireAuth>
+        }
+      />
       <Route
         path="/work-orders"
         element={
-          <RequireRole allow={["Manager", "Mechanic"]}>
+          <RequireAuth>
             <WorkOrdersPage />
-          </RequireRole>
+          </RequireAuth>
         }
       />
       <Route
@@ -68,26 +76,17 @@ export default function AppRoutes() {
       <Route
         path="/issue-reports"
         element={
-          <RequireRole allow={["Manager", "Driver"]}>
+          <RequireAuth>
             <IssueReportsPage />
-          </RequireRole>
+          </RequireAuth>
         }
       />
-      <Route
-        path="/issue-reports/new"
-        element={
-          <RequireRole allow={["Manager", "Driver"]}>
-            <NewIssueReportPage />
-          </RequireRole>
-        }
-      />
-
       <Route
         path="/inventory"
         element={
-          <RequireRole allow={["Manager", "PartsClerk"]}>
+          <RequireAuth>
             <InventoryPage />
-          </RequireRole>
+          </RequireAuth>
         }
       />
       <Route
@@ -107,18 +106,18 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="/parts"
+        path="/inventory-locations"
         element={
           <RequireRole allow={["Manager", "PartsClerk"]}>
-            <PartsPage />
+            <InventoryLocationsPage />
           </RequireRole>
         }
       />
       <Route
-        path="/inventory/movements"
+        path="/parts"
         element={
-          <RequireRole allow={["Manager", "PartsClerk", "Mechanic"]}>
-            <InventoryMovementsPage />
+          <RequireRole allow={["Manager", "PartsClerk"]}>
+            <PartsPage />
           </RequireRole>
         }
       />

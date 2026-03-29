@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RacingGarage.Data;
 
@@ -11,9 +12,11 @@ using RacingGarage.Data;
 namespace RacingGarage.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260101224828_RemoveCarComponents")]
+    partial class RemoveCarComponents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -325,7 +328,7 @@ namespace RacingGarage.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.Property<int>("SupplierId")
+                    b.Property<int?>("SupplierId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("UnitCost")
@@ -572,8 +575,6 @@ namespace RacingGarage.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("LinkedIssueId");
-
                     b.HasIndex("TeamCarId");
 
                     b.ToTable("WorkOrders");
@@ -745,8 +746,7 @@ namespace RacingGarage.Migrations
                     b.HasOne("RacingGarage.Models.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Supplier");
                 });
@@ -822,11 +822,6 @@ namespace RacingGarage.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("RacingGarage.Models.IssueReport", "LinkedIssue")
-                        .WithMany()
-                        .HasForeignKey("LinkedIssueId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("RacingGarage.Models.TeamCar", "TeamCar")
                         .WithMany()
                         .HasForeignKey("TeamCarId")
@@ -838,8 +833,6 @@ namespace RacingGarage.Migrations
                     b.Navigation("CarSession");
 
                     b.Navigation("CreatedByUser");
-
-                    b.Navigation("LinkedIssue");
 
                     b.Navigation("TeamCar");
                 });

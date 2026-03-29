@@ -11,7 +11,6 @@ public class AppDbContext : DbContext
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<TeamCar> TeamCars => Set<TeamCar>();
-    public DbSet<CarComponent> CarComponents => Set<CarComponent>();
     public DbSet<CarSession> CarSessions => Set<CarSession>();
     public DbSet<WorkOrder> WorkOrders => Set<WorkOrder>();
     public DbSet<WorkOrderTask> WorkOrderTasks => Set<WorkOrderTask>();
@@ -72,6 +71,12 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(w => w.CarSessionId)
             .OnDelete(DeleteBehavior.SetNull);
+        
+        modelBuilder.Entity<WorkOrder>()
+            .HasOne(w => w.LinkedIssue)
+            .WithMany()
+            .HasForeignKey(w => w.LinkedIssueId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<LaborLog>()
             .HasOne(l => l.MechanicUser)
@@ -112,12 +117,12 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Part>()
             .Property(p => p.UnitCost)
             .HasPrecision(18, 2);
-
+        
         modelBuilder.Entity<Part>()
             .HasOne(p => p.Supplier)
             .WithMany()
             .HasForeignKey(p => p.SupplierId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
         
         modelBuilder.Entity<InventoryStock>()
             .HasIndex(s => new { s.PartId, s.InventoryLocationId })

@@ -15,12 +15,15 @@ public class CarSessionsController : ControllerBase
 
     public CarSessionsController(AppDbContext db) => _db = db;
 
-    // GET /api/car-sessions
     [HttpGet]
-    public async Task<ActionResult<List<CarSessionReadDto>>> GetAll()
+    public async Task<ActionResult<List<CarSessionReadDto>>> GetAll([FromQuery] int? teamCarId)
     {
-        var sessions = await _db.CarSessions
-            .AsNoTracking()
+        var q = _db.CarSessions.AsNoTracking();
+
+        if (teamCarId.HasValue)
+            q = q.Where(s => s.TeamCarId == teamCarId.Value);
+
+        var sessions = await q
             .OrderByDescending(s => s.Date)
             .ThenByDescending(s => s.Id)
             .Select(s => new CarSessionReadDto
@@ -98,7 +101,7 @@ public class CarSessionsController : ControllerBase
 
         _db.CarSessions.Add(session);
         await _db.SaveChangesAsync();
-        
+
         var created = await _db.CarSessions
             .AsNoTracking()
             .Where(s => s.Id == session.Id)

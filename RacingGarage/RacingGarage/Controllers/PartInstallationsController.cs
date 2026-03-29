@@ -171,4 +171,30 @@ public class PartInstallationsController : ControllerBase
 
         return CreatedAtAction(nameof(GetById), new { id = read.Id }, read);
     }
+    
+    // DELETE /api/part-installations/{id}
+    [Authorize(Roles = "Manager,Mechanic")]
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var install = await _db.PartInstallations
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (install is null) return NotFound();
+
+        var stock = await _db.InventoryStock
+            .FirstOrDefaultAsync(s =>
+                s.PartId == install.PartId &&
+                s.InventoryLocationId == install.InventoryLocationId);
+
+        if (stock is null)
+            return BadRequest("Inventory stock row not found to restore.");
+
+        stock.Quantity += install.Quantity;
+
+        _db.PartInstallations.Remove(install);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
 }

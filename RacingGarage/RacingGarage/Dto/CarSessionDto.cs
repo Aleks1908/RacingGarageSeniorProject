@@ -1,5 +1,3 @@
-namespace RacingGarage.dto;
-
 public sealed class CarSessionReadDto
 {
     public int Id { get; init; }
@@ -15,10 +13,9 @@ public sealed class CarSessionReadDto
     public string? DriverName { get; init; }
 
     public int Laps { get; init; }
-    public string Notes { get; init; } = "";
+    public string? Notes { get; init; } // ✅ optional in API response
 }
 
-// Create DTO
 public sealed class CarSessionCreateDto
 {
     public int TeamCarId { get; init; }
@@ -30,10 +27,9 @@ public sealed class CarSessionCreateDto
     public int? DriverUserId { get; init; }
 
     public int Laps { get; init; }
-    public string Notes { get; init; } = "";
+    public string? Notes { get; init; } // ✅ optional on create
 }
 
-// Update DTO 
 public sealed class CarSessionUpdateDto
 {
     public int TeamCarId { get; init; }
@@ -45,5 +41,5 @@ public sealed class CarSessionUpdateDto
     public int? DriverUserId { get; init; }
 
     public int Laps { get; init; }
-    public string Notes { get; init; } = "";
+    public string? Notes { get; init; } // ✅ optional on update
 }

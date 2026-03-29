@@ -7,11 +7,11 @@ public class CarSession
     public int TeamCarId { get; set; }
     public TeamCar TeamCar { get; set; } = null!;
 
-    public string SessionType { get; set; } = "Practice"; // Practice/Test/Race
+    public string SessionType { get; set; } = "Practice";
     public DateOnly Date { get; set; }
     public string TrackName { get; set; } = "";
 
-    public int? DriverUserId { get; set; }   // links to Users (optional)
+    public int? DriverUserId { get; set; }  
     public AppUser? DriverUser { get; set; }
 
     public int Laps { get; set; }

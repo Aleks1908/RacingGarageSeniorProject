@@ -15,6 +15,12 @@ public class WorkOrdersController : ControllerBase
 {
     private readonly AppDbContext _db;
 
+    private const string WO_STATUS_CLOSED = "Closed";
+    private const string CAR_STATUS_ACTIVE = "Active";
+    private const string CAR_STATUS_SERVICE = "Service";
+    private const string ISSUE_STATUS_CLOSED = "Closed";
+    private const string ISSUE_STATUS_LINKED = "Linked";
+
     public WorkOrdersController(AppDbContext db) => _db = db;
 
     private bool TryGetCurrentUserId(out int userId)
@@ -23,6 +29,119 @@ public class WorkOrdersController : ControllerBase
                     ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
         return int.TryParse(idStr, out userId);
+    }
+
+    private static bool IsClosed(string? status) =>
+        string.Equals(status?.Trim(), WO_STATUS_CLOSED, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Sets car status to Service if ANY work order for that car is not Closed, otherwise Active.
+    /// If car is Retired => never touch it.
+    /// </summary>
+    private async Task SetCarStatusFromWorkOrdersAsync(
+        int carId,
+        int? excludeWorkOrderId = null,
+        bool includeCurrentWorkOrderAsOpen = false)
+    {
+        var car = await _db.TeamCars.FirstOrDefaultAsync(c => c.Id == carId);
+        if (car is null) return;
+
+        if (string.Equals(car.Status, "Retired", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var anyNonClosed = await _db.WorkOrders
+            .AsNoTracking()
+            .Where(w => w.TeamCarId == carId)
+            .Where(w => excludeWorkOrderId == null || w.Id != excludeWorkOrderId.Value)
+            .AnyAsync(w => w.Status != null && w.Status.ToLower() != "closed");
+
+        if (includeCurrentWorkOrderAsOpen)
+            anyNonClosed = true;
+
+        car.Status = anyNonClosed ? CAR_STATUS_SERVICE : CAR_STATUS_ACTIVE;
+    }
+
+    /// <summary>
+    /// Keeps the two "link id" columns consistent:
+    /// - WorkOrder.LinkedIssueId
+    /// - IssueReport.LinkedWorkOrderId
+    /// Passing issueId=null means "unlink".
+    /// </summary>
+    private async Task SyncWorkOrderIssueLinkAsync(int workOrderId, int? issueId)
+    {
+        var wo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId);
+        if (wo is null) return;
+
+        if (issueId is null)
+        {
+            var prevIssueId = wo.LinkedIssueId;
+            wo.LinkedIssueId = null;
+
+            if (prevIssueId.HasValue)
+            {
+                var prevIssue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == prevIssueId.Value);
+                if (prevIssue != null && prevIssue.LinkedWorkOrderId == workOrderId)
+                    prevIssue.LinkedWorkOrderId = null;
+            }
+
+            var otherIssues = await _db.IssueReports.Where(i => i.LinkedWorkOrderId == workOrderId).ToListAsync();
+            foreach (var i in otherIssues)
+                i.LinkedWorkOrderId = null;
+
+            return;
+        }
+
+        var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == issueId.Value);
+        if (issue is null)
+            throw new InvalidOperationException($"IssueReport '{issueId}' does not exist.");
+
+        if (issue.TeamCarId != wo.TeamCarId)
+            throw new InvalidOperationException("Cannot link Issue and Work Order from different cars.");
+
+        
+        if (issue.LinkedWorkOrderId.HasValue && issue.LinkedWorkOrderId.Value != workOrderId)
+            throw new InvalidOperationException($"IssueReport '{issue.Id}' is already linked to WorkOrder '{issue.LinkedWorkOrderId}'.");
+
+        if (wo.LinkedIssueId.HasValue && wo.LinkedIssueId.Value != issue.Id)
+        {
+            var prevIssue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == wo.LinkedIssueId.Value);
+            if (prevIssue != null && prevIssue.LinkedWorkOrderId == workOrderId)
+                prevIssue.LinkedWorkOrderId = null;
+        }
+
+
+        wo.LinkedIssueId = issue.Id;
+        issue.LinkedWorkOrderId = wo.Id;
+        
+        if (!IsClosed(wo.Status) && !string.Equals(issue.Status, ISSUE_STATUS_CLOSED, StringComparison.OrdinalIgnoreCase))
+        {
+            issue.Status = ISSUE_STATUS_LINKED;
+            issue.ClosedAt = null;
+        }
+    }
+
+    
+    private IQueryable<WorkOrderReadDto> ProjectWorkOrderRead(IQueryable<WorkOrder> q)
+    {
+        return q.Select(w => new WorkOrderReadDto
+        {
+            Id = w.Id,
+            TeamCarId = w.TeamCarId,
+            TeamCarNumber = w.TeamCar.CarNumber,
+            CreatedByUserId = w.CreatedByUserId,
+            CreatedByName = w.CreatedByUser.Name,
+            AssignedToUserId = w.AssignedToUserId,
+            AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
+            CarSessionId = w.CarSessionId,
+            Title = w.Title,
+            Description = w.Description,
+            Priority = w.Priority,
+            Status = w.Status,
+            CreatedAt = w.CreatedAt,
+            DueDate = w.DueDate,
+            ClosedAt = w.ClosedAt,
+            LinkedIssueId = w.LinkedIssueId
+        });
     }
 
     // GET /api/work-orders
@@ -43,26 +162,8 @@ public class WorkOrdersController : ControllerBase
         if (!string.IsNullOrWhiteSpace(priority))
             q = q.Where(w => w.Priority == priority.Trim());
 
-        var list = await q
+        var list = await ProjectWorkOrderRead(q)
             .OrderByDescending(w => w.CreatedAt)
-            .Select(w => new WorkOrderReadDto
-            {
-                Id = w.Id,
-                TeamCarId = w.TeamCarId,
-                TeamCarNumber = w.TeamCar.CarNumber,
-                CreatedByUserId = w.CreatedByUserId,
-                CreatedByName = w.CreatedByUser.Name,
-                AssignedToUserId = w.AssignedToUserId,
-                AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
-                CarSessionId = w.CarSessionId,
-                Title = w.Title,
-                Description = w.Description,
-                Priority = w.Priority,
-                Status = w.Status,
-                CreatedAt = w.CreatedAt,
-                DueDate = w.DueDate,
-                ClosedAt = w.ClosedAt
-            })
             .ToListAsync();
 
         return Ok(list);
@@ -72,27 +173,9 @@ public class WorkOrdersController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<WorkOrderReadDto>> GetById(int id)
     {
-        var wo = await _db.WorkOrders
-            .AsNoTracking()
-            .Where(w => w.Id == id)
-            .Select(w => new WorkOrderReadDto
-            {
-                Id = w.Id,
-                TeamCarId = w.TeamCarId,
-                TeamCarNumber = w.TeamCar.CarNumber,
-                CreatedByUserId = w.CreatedByUserId,
-                CreatedByName = w.CreatedByUser.Name,
-                AssignedToUserId = w.AssignedToUserId,
-                AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
-                CarSessionId = w.CarSessionId,
-                Title = w.Title,
-                Description = w.Description,
-                Priority = w.Priority,
-                Status = w.Status,
-                CreatedAt = w.CreatedAt,
-                DueDate = w.DueDate,
-                ClosedAt = w.ClosedAt
-            })
+        var wo = await ProjectWorkOrderRead(
+                _db.WorkOrders.AsNoTracking().Where(w => w.Id == id)
+            )
             .FirstOrDefaultAsync();
 
         if (wo is null) return NotFound();
@@ -139,38 +222,33 @@ public class WorkOrdersController : ControllerBase
             Status = string.IsNullOrWhiteSpace(dto.Status) ? "Open" : dto.Status.Trim(),
 
             CreatedAt = DateTime.UtcNow,
-            DueDate = dto.DueDate
+            DueDate = dto.DueDate,
+
+            LinkedIssueId = dto.LinkedIssueId
         };
 
         _db.WorkOrders.Add(wo);
         await _db.SaveChangesAsync();
 
-        var created = await _db.WorkOrders
-            .AsNoTracking()
-            .Where(w => w.Id == wo.Id)
-            .Select(w => new WorkOrderReadDto
-            {
-                Id = w.Id,
-                TeamCarId = w.TeamCarId,
-                TeamCarNumber = w.TeamCar.CarNumber,
-                CreatedByUserId = w.CreatedByUserId,
-                CreatedByName = w.CreatedByUser.Name,
-                AssignedToUserId = w.AssignedToUserId,
-                AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
-                CarSessionId = w.CarSessionId,
-                Title = w.Title,
-                Description = w.Description,
-                Priority = w.Priority,
-                Status = w.Status,
-                CreatedAt = w.CreatedAt,
-                DueDate = w.DueDate,
-                ClosedAt = w.ClosedAt
-            })
+        if (wo.LinkedIssueId.HasValue)
+            await SyncWorkOrderIssueLinkAsync(wo.Id, wo.LinkedIssueId);
+
+        await SetCarStatusFromWorkOrdersAsync(
+            wo.TeamCarId,
+            excludeWorkOrderId: null,
+            includeCurrentWorkOrderAsOpen: !IsClosed(wo.Status)
+        );
+
+        await _db.SaveChangesAsync();
+
+        var createdDto = await ProjectWorkOrderRead(
+                _db.WorkOrders.AsNoTracking().Where(w => w.Id == wo.Id)
+            )
             .FirstAsync();
 
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        return CreatedAtAction(nameof(GetById), new { id = wo.Id }, createdDto);
     }
-
+    
     // PUT /api/work-orders/{id}
     [Authorize(Roles = "Mechanic,Manager")]
     [HttpPut("{id:int}")]
@@ -181,6 +259,9 @@ public class WorkOrdersController : ControllerBase
 
         var wo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == id);
         if (wo is null) return NotFound();
+
+        var oldCarId = wo.TeamCarId;
+        var prevStatus = wo.Status;
 
         var carExists = await _db.TeamCars.AnyAsync(c => c.Id == dto.TeamCarId);
         if (!carExists) return BadRequest($"TeamCarId '{dto.TeamCarId}' does not exist.");
@@ -210,6 +291,69 @@ public class WorkOrdersController : ControllerBase
         wo.DueDate = dto.DueDate;
         wo.ClosedAt = dto.ClosedAt;
 
+        var newCarId = wo.TeamCarId;
+        var newStatus = wo.Status;
+
+        if (dto.LinkedIssueId.HasValue && dto.LinkedIssueId != wo.LinkedIssueId)
+        {
+            wo.LinkedIssueId = dto.LinkedIssueId;
+            await SyncWorkOrderIssueLinkAsync(wo.Id, wo.LinkedIssueId);
+        }
+
+        if (!wo.LinkedIssueId.HasValue)
+        {
+            var issueId = await _db.IssueReports
+                .AsNoTracking()
+                .Where(i => i.LinkedWorkOrderId == wo.Id)
+                .OrderByDescending(i => i.ReportedAt)
+                .Select(i => (int?)i.Id)
+                .FirstOrDefaultAsync();
+
+            if (issueId.HasValue)
+            {
+                wo.LinkedIssueId = issueId.Value;
+            }
+        }
+
+        if (!string.Equals(prevStatus, newStatus, StringComparison.OrdinalIgnoreCase))
+        {
+            if (wo.LinkedIssueId.HasValue)
+            {
+                var linkedIssue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == wo.LinkedIssueId.Value);
+                if (linkedIssue != null)
+                {
+                    if (linkedIssue.LinkedWorkOrderId != wo.Id)
+                        linkedIssue.LinkedWorkOrderId = wo.Id;
+
+                    if (IsClosed(newStatus))
+                    {
+                        linkedIssue.Status = ISSUE_STATUS_CLOSED;
+                        linkedIssue.ClosedAt ??= DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        linkedIssue.Status = ISSUE_STATUS_LINKED;
+                        linkedIssue.ClosedAt = null;
+                    }
+                }
+            }
+        }
+
+        await SetCarStatusFromWorkOrdersAsync(
+            newCarId,
+            excludeWorkOrderId: wo.Id,
+            includeCurrentWorkOrderAsOpen: !IsClosed(newStatus)
+        );
+
+        if (oldCarId != newCarId)
+        {
+            await SetCarStatusFromWorkOrdersAsync(
+                oldCarId,
+                excludeWorkOrderId: wo.Id,
+                includeCurrentWorkOrderAsOpen: false
+            );
+        }
+
         await _db.SaveChangesAsync();
         return NoContent();
     }
@@ -222,9 +366,25 @@ public class WorkOrdersController : ControllerBase
         var wo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == id);
         if (wo is null) return NotFound();
 
-        _db.WorkOrders.Remove(wo);
-        await _db.SaveChangesAsync();
+        var carId = wo.TeamCarId;
+        var linkedIssueId = wo.LinkedIssueId;
 
+        _db.WorkOrders.Remove(wo);
+
+        if (linkedIssueId.HasValue)
+        {
+            var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == linkedIssueId.Value);
+            if (issue != null && issue.LinkedWorkOrderId == id)
+                issue.LinkedWorkOrderId = null;
+        }
+
+        await SetCarStatusFromWorkOrdersAsync(
+            carId,
+            excludeWorkOrderId: id,
+            includeCurrentWorkOrderAsOpen: false
+        );
+
+        await _db.SaveChangesAsync();
         return NoContent();
     }
 
@@ -232,30 +392,37 @@ public class WorkOrdersController : ControllerBase
     [HttpGet("{id:int}/details")]
     public async Task<ActionResult<WorkOrderDetailsDto>> GetDetails(int id)
     {
-        var wo = await _db.WorkOrders
-            .AsNoTracking()
-            .Where(w => w.Id == id)
-            .Select(w => new WorkOrderReadDto
-            {
-                Id = w.Id,
-                TeamCarId = w.TeamCarId,
-                TeamCarNumber = w.TeamCar.CarNumber,
-                CreatedByUserId = w.CreatedByUserId,
-                CreatedByName = w.CreatedByUser.Name,
-                AssignedToUserId = w.AssignedToUserId,
-                AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
-                CarSessionId = w.CarSessionId,
-                Title = w.Title,
-                Description = w.Description,
-                Priority = w.Priority,
-                Status = w.Status,
-                CreatedAt = w.CreatedAt,
-                DueDate = w.DueDate,
-                ClosedAt = w.ClosedAt
-            })
+        var wo = await ProjectWorkOrderRead(
+                _db.WorkOrders.AsNoTracking().Where(w => w.Id == id)
+            )
             .FirstOrDefaultAsync();
 
         if (wo is null) return NotFound();
+        
+        IssueReportReadDto? linkedIssue = null;
+        if (wo.LinkedIssueId.HasValue)
+        {
+            linkedIssue = await _db.IssueReports
+                .AsNoTracking()
+                .Where(i => i.Id == wo.LinkedIssueId.Value)
+                .Select(i => new IssueReportReadDto
+                {
+                    Id = i.Id,
+                    TeamCarId = i.TeamCarId,
+                    TeamCarNumber = i.TeamCar.CarNumber,
+                    CarSessionId = i.CarSessionId,
+                    ReportedByUserId = i.ReportedByUserId,
+                    ReportedByName = i.ReportedByUser.Name,
+                    LinkedWorkOrderId = i.LinkedWorkOrderId,
+                    Title = i.Title,
+                    Description = i.Description,
+                    Severity = i.Severity,
+                    Status = i.Status,
+                    ReportedAt = i.ReportedAt,
+                    ClosedAt = i.ClosedAt
+                })
+                .FirstOrDefaultAsync();
+        }
 
         var tasks = await _db.WorkOrderTasks
             .AsNoTracking()
@@ -318,7 +485,10 @@ public class WorkOrdersController : ControllerBase
             LaborLogs = labor,
             PartInstallations = installs,
             TotalLaborMinutes = labor.Sum(x => x.Minutes),
-            TotalInstalledPartsQty = installs.Sum(x => x.Quantity)
+            TotalInstalledPartsQty = installs.Sum(x => x.Quantity),
+
+            LinkedIssueId = wo.LinkedIssueId,
+            LinkedIssue = linkedIssue
         });
     }
 }

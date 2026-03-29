@@ -64,7 +64,7 @@ public class TeamCarsController : ControllerBase
         return Ok(car);
     }
 
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Manager,Mechanic")]
     [HttpPost]
     public async Task<ActionResult<TeamCarReadDto>> Create([FromBody] TeamCarCreateDto dto)
     {
@@ -107,7 +107,7 @@ public class TeamCarsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = car.Id }, readDto);
     }
 
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Manager,Mechanic")]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] TeamCarUpdateDto dto)
     {
@@ -136,7 +136,7 @@ public class TeamCarsController : ControllerBase
         return NoContent();
     }
 
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Manager,Mechanic")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -160,10 +160,13 @@ public class TeamCarsController : ControllerBase
             {
                 Id = c.Id,
                 CarNumber = c.CarNumber,
+                Nickname = c.Nickname,
                 Make = c.Make,
                 Model = c.Model,
                 Year = c.Year,
-                Status = c.Status
+                CarClass = c.CarClass,
+                Status = c.Status,
+                OdometerKm = c.OdometerKm
             })
             .FirstOrDefaultAsync();
 
@@ -234,7 +237,9 @@ public class TeamCarsController : ControllerBase
                 Status = w.Status,
                 CreatedAt = w.CreatedAt,
                 DueDate = w.DueDate,
-                ClosedAt = w.ClosedAt
+                ClosedAt = w.ClosedAt,
+                LinkedIssueId = w.LinkedIssueId,
+
             })
             .ToListAsync();
 

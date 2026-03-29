@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "YapNnnzLrjk=",
+  "dgSpecHash": "hblhYobXkFU=",
   "success": true,
-  "projectFilePath": "/Users/aleks4o/RacingGarage/RacingGarage/RacingGarage/RacingGarage.csproj",
+  "projectFilePath": "/Users/aleks4o/infsenior/RacingGarage/RacingGarage/RacingGarage/RacingGarage.csproj",
   "expectedPackageFiles": [
     "/Users/aleks4o/.nuget/packages/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg.sha512",
     "/Users/aleks4o/.nuget/packages/microsoft.aspnetcore.authentication.jwtbearer/10.0.1/microsoft.aspnetcore.authentication.jwtbearer.10.0.1.nupkg.sha512",

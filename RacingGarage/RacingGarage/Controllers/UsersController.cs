@@ -2,9 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using RacingGarage.Data;
 using RacingGarage.dto;
 using RacingGarage.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace RacingGarage.Controllers;
 
@@ -13,10 +17,79 @@ namespace RacingGarage.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IConfiguration _cfg;
     private readonly PasswordHasher<AppUser> _hasher = new();
 
-    public UsersController(AppDbContext db) => _db = db;
+    public UsersController(AppDbContext db, IConfiguration cfg)
+    {
+        _db = db;
+        _cfg = cfg;
+    }
 
+    private bool TryGetCurrentUserId(out int userId)
+    {
+        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        return int.TryParse(idStr, out userId);
+    }
+
+    private static UserReadDto ToReadDto(AppUser u) => new()
+    {
+        Id = u.Id,
+        Name = u.Name,
+        Email = u.Email,
+        IsActive = u.IsActive,
+        CreatedAt = u.CreatedAt,
+        Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList()
+    };
+    
+    private string MakeJwt(AppUser user)
+    {
+        var key = _cfg["Jwt:Key"];
+        var issuer = _cfg["Jwt:Issuer"];
+        var audience = _cfg["Jwt:Audience"];
+        var expMinutesStr = _cfg["Jwt:ExpiresMinutes"];
+
+        if (string.IsNullOrWhiteSpace(key))
+            throw new InvalidOperationException("Missing config: Jwt:Key");
+        if (string.IsNullOrWhiteSpace(issuer))
+            throw new InvalidOperationException("Missing config: Jwt:Issuer");
+        if (string.IsNullOrWhiteSpace(audience))
+            throw new InvalidOperationException("Missing config: Jwt:Audience");
+
+        var expMinutes = 720;
+        if (!string.IsNullOrWhiteSpace(expMinutesStr) && int.TryParse(expMinutesStr, out var m))
+            expMinutes = m;
+
+        var roles = user.UserRoles.Select(ur => ur.Role.Name).ToList();
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, user.Email),
+            new(JwtRegisteredClaimNames.Name, user.Name),
+        };
+
+        foreach (var r in roles)
+            claims.Add(new Claim(ClaimTypes.Role, r));
+
+        var creds = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            SecurityAlgorithms.HmacSha256
+        );
+
+        var token = new JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(expMinutes),
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+    
     // GET /api/users
     [HttpGet]
     public async Task<ActionResult<List<UserReadDto>>> GetAll()
@@ -72,13 +145,13 @@ public class UsersController : ControllerBase
 
         var email = dto.Email.Trim().ToLowerInvariant();
         var roleName = dto.Role.Trim();
-        
+
         var emailTaken = await _db.Users.AnyAsync(u => u.Email.ToLower() == email);
         if (emailTaken) return Conflict("A user with this email already exists.");
-        
+
         var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
         if (role is null) return BadRequest($"Role '{roleName}' does not exist.");
-        
+
         var user = new AppUser
         {
             Name = dto.Name.Trim(),
@@ -91,13 +164,8 @@ public class UsersController : ControllerBase
 
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
-        
-        _db.UserRoles.Add(new UserRole
-        {
-            UserId = user.Id,
-            RoleId = role.Id
-        });
 
+        _db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = role.Id });
         await _db.SaveChangesAsync();
 
         var read = new UserReadDto
@@ -112,7 +180,7 @@ public class UsersController : ControllerBase
 
         return CreatedAtAction(nameof(GetById), new { id = user.Id }, read);
     }
-    
+
     // PUT /api/users/{id}/role
     [Authorize(Roles = "Manager")]
     [HttpPut("{id:int}/role")]
@@ -128,7 +196,7 @@ public class UsersController : ControllerBase
 
         var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
         if (role is null) return BadRequest($"Role '{roleName}' does not exist.");
-        
+
         var existing = await _db.UserRoles.Where(ur => ur.UserId == id).ToListAsync();
         if (existing.Count > 0)
             _db.UserRoles.RemoveRange(existing);
@@ -150,5 +218,110 @@ public class UsersController : ControllerBase
         user.IsActive = false;
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+    
+    // GET /api/users/me
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<UserReadDto>> GetMe()
+    {
+        if (!TryGetCurrentUserId(out var currentUserId))
+            return Unauthorized("Invalid token (missing user id).");
+
+        var user = await _db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == currentUserId)
+            .Select(u => new UserReadDto
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Email = u.Email,
+                IsActive = u.IsActive,
+                CreatedAt = u.CreatedAt,
+                Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList()
+            })
+            .FirstOrDefaultAsync();
+
+        if (user is null) return NotFound();
+        return Ok(user);
+    }
+
+    // PUT /api/users/me
+    [Authorize]
+    [HttpPut("me")]
+    public async Task<ActionResult<object>> UpdateMe([FromBody] UserUpdateDto dto)
+    {
+        if (!TryGetCurrentUserId(out var currentUserId))
+            return Unauthorized("Invalid token (missing user id).");
+
+        if (string.IsNullOrWhiteSpace(dto.OldPassword))
+            return BadRequest("OldPassword is required.");
+
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            return BadRequest("Name is required.");
+
+        if (string.IsNullOrWhiteSpace(dto.Email))
+            return BadRequest("Email is required.");
+
+        var user = await _db.Users
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == currentUserId);
+
+        if (user is null) return NotFound();
+
+        var verify = _hasher.VerifyHashedPassword(user, user.PasswordHash ?? "", dto.OldPassword);
+        if (verify == PasswordVerificationResult.Failed)
+            return BadRequest("Old password is incorrect.");
+
+        var nextEmail = dto.Email.Trim().ToLowerInvariant();
+
+        var emailTaken = await _db.Users.AnyAsync(u => u.Id != user.Id && u.Email.ToLower() == nextEmail);
+        if (emailTaken) return Conflict("A user with this email already exists.");
+
+        user.Name = dto.Name.Trim();
+        user.Email = nextEmail;
+
+        await _db.SaveChangesAsync();
+
+        var token = MakeJwt(user);
+        var read = ToReadDto(user);
+
+        return Ok(new { token, user = read });
+    }
+
+    // PUT /api/users/me/password
+    [Authorize]
+    [HttpPut("me/password")]
+    public async Task<ActionResult<object>> ChangeMyPassword([FromBody] UserChangePasswordDto dto)
+    {
+        if (!TryGetCurrentUserId(out var currentUserId))
+            return Unauthorized("Invalid token (missing user id).");
+
+        if (string.IsNullOrWhiteSpace(dto.OldPassword))
+            return BadRequest("OldPassword is required.");
+
+        if (string.IsNullOrWhiteSpace(dto.NewPassword))
+            return BadRequest("NewPassword is required.");
+
+        if (dto.NewPassword.Trim().Length < 6)
+            return BadRequest("NewPassword must be at least 6 characters.");
+
+        var user = await _db.Users
+            .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == currentUserId);
+
+        if (user is null) return NotFound();
+
+        var verify = _hasher.VerifyHashedPassword(user, user.PasswordHash ?? "", dto.OldPassword);
+        if (verify == PasswordVerificationResult.Failed)
+            return BadRequest("Old password is incorrect.");
+
+        user.PasswordHash = _hasher.HashPassword(user, dto.NewPassword.Trim());
+        await _db.SaveChangesAsync();
+
+        var token = MakeJwt(user);
+        var read = ToReadDto(user);
+
+        return Ok(new { token, user = read });
     }
 }

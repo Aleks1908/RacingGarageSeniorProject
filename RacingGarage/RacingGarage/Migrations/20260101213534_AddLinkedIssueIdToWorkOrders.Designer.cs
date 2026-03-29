@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RacingGarage.Data;
 
@@ -11,9 +12,11 @@ using RacingGarage.Data;
 namespace RacingGarage.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260101213534_AddLinkedIssueIdToWorkOrders")]
+    partial class AddLinkedIssueIdToWorkOrders
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -54,6 +57,46 @@ namespace RacingGarage.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("RacingGarage.Models.CarComponent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Brand")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ComponentType")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("InstalledAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("RemovedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("SerialNumber")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("TeamCarId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeamCarId");
+
+                    b.ToTable("CarComponents");
                 });
 
             modelBuilder.Entity("RacingGarage.Models.CarSession", b =>
@@ -325,7 +368,7 @@ namespace RacingGarage.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.Property<int>("SupplierId")
+                    b.Property<int?>("SupplierId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("UnitCost")
@@ -572,8 +615,6 @@ namespace RacingGarage.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("LinkedIssueId");
-
                     b.HasIndex("TeamCarId");
 
                     b.ToTable("WorkOrders");
@@ -616,6 +657,17 @@ namespace RacingGarage.Migrations
                     b.HasIndex("WorkOrderId");
 
                     b.ToTable("WorkOrderTasks");
+                });
+
+            modelBuilder.Entity("RacingGarage.Models.CarComponent", b =>
+                {
+                    b.HasOne("RacingGarage.Models.TeamCar", "TeamCar")
+                        .WithMany("Components")
+                        .HasForeignKey("TeamCarId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TeamCar");
                 });
 
             modelBuilder.Entity("RacingGarage.Models.CarSession", b =>
@@ -745,8 +797,7 @@ namespace RacingGarage.Migrations
                     b.HasOne("RacingGarage.Models.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Supplier");
                 });
@@ -822,11 +873,6 @@ namespace RacingGarage.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("RacingGarage.Models.IssueReport", "LinkedIssue")
-                        .WithMany()
-                        .HasForeignKey("LinkedIssueId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("RacingGarage.Models.TeamCar", "TeamCar")
                         .WithMany()
                         .HasForeignKey("TeamCarId")
@@ -838,8 +884,6 @@ namespace RacingGarage.Migrations
                     b.Navigation("CarSession");
 
                     b.Navigation("CreatedByUser");
-
-                    b.Navigation("LinkedIssue");
 
                     b.Navigation("TeamCar");
                 });
@@ -867,6 +911,8 @@ namespace RacingGarage.Migrations
 
             modelBuilder.Entity("RacingGarage.Models.TeamCar", b =>
                 {
+                    b.Navigation("Components");
+
                     b.Navigation("Sessions");
                 });
 

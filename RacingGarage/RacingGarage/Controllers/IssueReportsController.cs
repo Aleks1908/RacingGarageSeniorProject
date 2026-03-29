@@ -15,6 +15,12 @@ public class IssueReportsController : ControllerBase
 {
     private readonly AppDbContext _db;
 
+    private const string ISSUE_STATUS_OPEN = "Open";
+    private const string ISSUE_STATUS_LINKED = "Linked";
+    private const string ISSUE_STATUS_CLOSED = "Closed";
+
+    private const string WO_STATUS_CLOSED = "Closed";
+
     public IssueReportsController(AppDbContext db) => _db = db;
 
     private bool TryGetCurrentUserId(out int userId)
@@ -26,6 +32,84 @@ public class IssueReportsController : ControllerBase
     }
 
     private bool IsInRole(string role) => User.IsInRole(role);
+
+    private static bool IsClosed(string? status) =>
+        string.Equals(status?.Trim(), ISSUE_STATUS_CLOSED, StringComparison.OrdinalIgnoreCase);
+
+    private static bool WoIsClosed(string? status) =>
+        string.Equals(status?.Trim(), WO_STATUS_CLOSED, StringComparison.OrdinalIgnoreCase);
+    
+    private async Task SyncIssueWorkOrderLinkAsync(int issueId, int? workOrderId)
+    {
+        var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == issueId);
+        if (issue is null) return;
+
+        if (workOrderId is null)
+        {
+            if (issue.LinkedWorkOrderId.HasValue)
+            {
+                var prevWo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == issue.LinkedWorkOrderId.Value);
+                if (prevWo != null && prevWo.LinkedIssueId == issue.Id)
+                    prevWo.LinkedIssueId = null;
+            }
+
+            issue.LinkedWorkOrderId = null;
+            issue.Status = ISSUE_STATUS_OPEN;
+            issue.ClosedAt = null;
+
+            return;
+        }
+
+        var wo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId.Value);
+        if (wo is null)
+            throw new InvalidOperationException($"LinkedWorkOrderId '{workOrderId}' does not exist.");
+        
+        if (wo.TeamCarId != issue.TeamCarId)
+            throw new InvalidOperationException("Cannot link Issue and Work Order from different cars.");
+
+        if (issue.LinkedWorkOrderId.HasValue && issue.LinkedWorkOrderId.Value != wo.Id)
+        {
+            var prevWo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == issue.LinkedWorkOrderId.Value);
+            if (prevWo != null && prevWo.LinkedIssueId == issue.Id)
+                prevWo.LinkedIssueId = null;
+        }
+
+        var otherIssues = await _db.IssueReports
+            .Where(x => x.LinkedWorkOrderId == wo.Id && x.Id != issue.Id)
+            .ToListAsync();
+
+        foreach (var other in otherIssues)
+        {
+            other.LinkedWorkOrderId = null;
+            other.Status = ISSUE_STATUS_OPEN;
+            other.ClosedAt = null;
+        }
+
+        if (wo.LinkedIssueId.HasValue && wo.LinkedIssueId.Value != issue.Id)
+        {
+            var prevIssue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == wo.LinkedIssueId.Value);
+            if (prevIssue != null && prevIssue.LinkedWorkOrderId == wo.Id)
+            {
+                prevIssue.LinkedWorkOrderId = null;
+                prevIssue.Status = ISSUE_STATUS_OPEN;
+                prevIssue.ClosedAt = null;
+            }
+        }
+
+        issue.LinkedWorkOrderId = wo.Id;
+        wo.LinkedIssueId = issue.Id;
+
+        if (WoIsClosed(wo.Status))
+        {
+            issue.Status = ISSUE_STATUS_CLOSED;
+            issue.ClosedAt ??= DateTime.UtcNow;
+        }
+        else
+        {
+            issue.Status = ISSUE_STATUS_LINKED;
+            issue.ClosedAt = null;
+        }
+    }
 
     // GET /api/issue-reports?teamCarId=2&status=Open&severity=High&reportedByUserId=1
     [HttpGet]
@@ -163,13 +247,13 @@ public class IssueReportsController : ControllerBase
         {
             TeamCarId = dto.TeamCarId,
             CarSessionId = dto.CarSessionId,
-            ReportedByUserId = currentUserId, 
+            ReportedByUserId = currentUserId,
 
             Title = dto.Title.Trim(),
             Description = dto.Description?.Trim() ?? "",
 
             Severity = string.IsNullOrWhiteSpace(dto.Severity) ? "Medium" : dto.Severity.Trim(),
-            Status = string.IsNullOrWhiteSpace(dto.Status) ? "Open" : dto.Status.Trim(),
+            Status = string.IsNullOrWhiteSpace(dto.Status) ? ISSUE_STATUS_OPEN : dto.Status.Trim(),
 
             ReportedAt = DateTime.UtcNow
         };
@@ -183,23 +267,16 @@ public class IssueReportsController : ControllerBase
             .Select(i => new IssueReportReadDto
             {
                 Id = i.Id,
-
                 TeamCarId = i.TeamCarId,
                 TeamCarNumber = i.TeamCar.CarNumber,
-
                 CarSessionId = i.CarSessionId,
-
                 ReportedByUserId = i.ReportedByUserId,
                 ReportedByName = i.ReportedByUser.Name,
-
                 LinkedWorkOrderId = i.LinkedWorkOrderId,
-
                 Title = i.Title,
                 Description = i.Description,
-
                 Severity = i.Severity,
                 Status = i.Status,
-
                 ReportedAt = i.ReportedAt,
                 ClosedAt = i.ClosedAt
             })
@@ -237,12 +314,6 @@ public class IssueReportsController : ControllerBase
             if (!sessionExists) return BadRequest($"CarSessionId '{dto.CarSessionId.Value}' does not exist.");
         }
 
-        if (dto.LinkedWorkOrderId.HasValue)
-        {
-            var woExists = await _db.WorkOrders.AnyAsync(w => w.Id == dto.LinkedWorkOrderId.Value);
-            if (!woExists) return BadRequest($"LinkedWorkOrderId '{dto.LinkedWorkOrderId.Value}' does not exist.");
-        }
-
         issue.TeamCarId = dto.TeamCarId;
         issue.CarSessionId = dto.CarSessionId;
 
@@ -250,10 +321,11 @@ public class IssueReportsController : ControllerBase
         issue.Description = dto.Description?.Trim() ?? "";
 
         issue.Severity = string.IsNullOrWhiteSpace(dto.Severity) ? issue.Severity : dto.Severity.Trim();
-        issue.Status = string.IsNullOrWhiteSpace(dto.Status) ? issue.Status : dto.Status.Trim();
 
-        issue.LinkedWorkOrderId = dto.LinkedWorkOrderId;
+        issue.Status = string.IsNullOrWhiteSpace(dto.Status) ? issue.Status : dto.Status.Trim();
         issue.ClosedAt = dto.ClosedAt;
+
+        await SyncIssueWorkOrderLinkAsync(issue.Id, dto.LinkedWorkOrderId);
 
         await _db.SaveChangesAsync();
         return NoContent();
@@ -267,7 +339,28 @@ public class IssueReportsController : ControllerBase
         var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == id);
         if (issue is null) return NotFound();
 
+        if (issue.LinkedWorkOrderId.HasValue)
+        {
+            var wo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == issue.LinkedWorkOrderId.Value);
+            if (wo != null && wo.LinkedIssueId == issue.Id)
+                wo.LinkedIssueId = null;
+        }
+
         _db.IssueReports.Remove(issue);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // POST /api/issue-reports/{id}/link-work-order
+    [Authorize(Roles = "Mechanic,Manager")]
+    [HttpPost("{id:int}/link-work-order")]
+    public async Task<IActionResult> LinkWorkOrder(int id, [FromBody] IssueReportLinkWorkOrderDto dto)
+    {
+        var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == id);
+        if (issue is null) return NotFound();
+
+        await SyncIssueWorkOrderLinkAsync(issue.Id, dto.LinkedWorkOrderId);
+
         await _db.SaveChangesAsync();
         return NoContent();
     }

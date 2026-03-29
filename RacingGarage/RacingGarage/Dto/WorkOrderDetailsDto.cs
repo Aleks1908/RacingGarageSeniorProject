@@ -9,4 +9,8 @@ public sealed class WorkOrderDetailsDto
 
     public int TotalLaborMinutes { get; init; }
     public int TotalInstalledPartsQty { get; init; }
+    
+    public int? LinkedIssueId { get; set; }
+    
+    public IssueReportReadDto? LinkedIssue { get; set; }
 }

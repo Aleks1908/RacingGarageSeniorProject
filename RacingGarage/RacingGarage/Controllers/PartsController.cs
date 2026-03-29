@@ -97,8 +97,17 @@ public class PartsController : ControllerBase
             SupplierName = p.Supplier != null ? p.Supplier.Name : null,
             IsActive = p.IsActive,
             CreatedAt = p.CreatedAt,
-            CurrentStock = null,
-            NeedsReorder = null
+            
+            CurrentStock = _db.InventoryStock
+                .Where(s => s.PartId == p.Id)
+                .Select(s => (int?)s.Quantity)
+                .Sum() ?? 0,
+
+            NeedsReorder = p.ReorderPoint > 0 &&
+                           ((_db.InventoryStock
+                               .Where(s => s.PartId == p.Id)
+                               .Select(s => (int?)s.Quantity)
+                               .Sum() ?? 0) < p.ReorderPoint)
         })
         .ToListAsync();
 
@@ -147,11 +156,10 @@ public class PartsController : ControllerBase
         var skuTaken = await _db.Parts.AnyAsync(p => p.Sku == sku);
         if (skuTaken) return Conflict($"Part with Sku '{sku}' already exists.");
 
-        if (dto.SupplierId.HasValue)
-        {
-            var supplierExists = await _db.Suppliers.AnyAsync(s => s.Id == dto.SupplierId.Value);
-            if (!supplierExists) return BadRequest($"SupplierId '{dto.SupplierId.Value}' does not exist.");
-        }
+        if (dto.SupplierId <= 0) return BadRequest("SupplierId is required.");
+
+        var supplierExists = await _db.Suppliers.AnyAsync(s => s.Id == dto.SupplierId);
+        if (!supplierExists) return BadRequest($"SupplierId '{dto.SupplierId}' does not exist.");
 
         var part = new Part
         {
@@ -210,12 +218,11 @@ public class PartsController : ControllerBase
             if (taken) return Conflict($"Part with Sku '{sku}' already exists.");
         }
 
-        if (dto.SupplierId.HasValue)
-        {
-            var supplierExists = await _db.Suppliers.AnyAsync(s => s.Id == dto.SupplierId.Value);
-            if (!supplierExists) return BadRequest($"SupplierId '{dto.SupplierId.Value}' does not exist.");
-        }
+        if (dto.SupplierId <= 0) return BadRequest("SupplierId is required.");
 
+        var supplierExists = await _db.Suppliers.AnyAsync(s => s.Id == dto.SupplierId);
+        if (!supplierExists) return BadRequest($"SupplierId '{dto.SupplierId}' does not exist.");
+        
         part.Name = dto.Name.Trim();
         part.Sku = sku;
         part.Category = dto.Category.Trim();
@@ -227,8 +234,8 @@ public class PartsController : ControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
-
-    // DELETE /api/parts/{id} (soft delete)
+    
+    // DELETE /api/parts/{id}
     [Authorize(Roles = "PartsClerk,Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
@@ -236,7 +243,7 @@ public class PartsController : ControllerBase
         var part = await _db.Parts.FirstOrDefaultAsync(p => p.Id == id);
         if (part is null) return NotFound();
 
-        part.IsActive = false;
+        _db.Parts.Remove(part);
         await _db.SaveChangesAsync();
         return NoContent();
     }

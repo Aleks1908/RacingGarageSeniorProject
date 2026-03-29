@@ -147,25 +147,16 @@ public class LaborLogsController : ControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
-
-    // DELETE /api/labor-logs/5
+    
+    // DELETE /api/labor-logs/{id}
     [Authorize(Roles = "Mechanic,Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var log = await _db.LaborLogs.FirstOrDefaultAsync(l => l.Id == id);
-        if (log is null) return NotFound();
+        var l = await _db.LaborLogs.FirstOrDefaultAsync(x => x.Id == id);
+        if (l is null) return NotFound();
 
-        if (!IsManager())
-        {
-            if (!TryGetCurrentUserId(out var currentUserId))
-                return Unauthorized("Invalid token (missing user id).");
-
-            if (log.MechanicUserId != currentUserId)
-                return Forbid();
-        }
-
-        _db.LaborLogs.Remove(log);
+        _db.LaborLogs.Remove(l);
         await _db.SaveChangesAsync();
         return NoContent();
     }

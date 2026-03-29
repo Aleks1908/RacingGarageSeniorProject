@@ -28,7 +28,7 @@ public sealed class PartInstallationCreateDto
     public int PartId { get; init; }
     public int InventoryLocationId { get; init; }
 
-    public int Quantity { get; init; } // > 0
+    public int Quantity { get; init; }
 
     public int? InstalledByUserId { get; init; }
     public string Notes { get; init; } = "";

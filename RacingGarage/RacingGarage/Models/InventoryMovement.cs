@@ -10,8 +10,8 @@ public class InventoryMovement
     public int InventoryLocationId { get; set; }
     public InventoryLocation InventoryLocation { get; set; } = null!;
 
-    public int QuantityChange { get; set; } // +in, -out
-    public string Reason { get; set; } = ""; // "Adjustment", "Receive", "Install", etc.
+    public int QuantityChange { get; set; } 
+    public string Reason { get; set; } = "";
 
     public int? WorkOrderId { get; set; }
     public WorkOrder? WorkOrder { get; set; }

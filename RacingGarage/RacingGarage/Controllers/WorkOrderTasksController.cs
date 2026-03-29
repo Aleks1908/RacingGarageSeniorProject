@@ -133,15 +133,16 @@ public class WorkOrderTasksController : ControllerBase
         return NoContent();
     }
 
-    // DELETE /api/work-order-tasks/10
+   
+    // DELETE /api/work-order-tasks/{id}
     [Authorize(Roles = "Mechanic,Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var task = await _db.WorkOrderTasks.FirstOrDefaultAsync(t => t.Id == id);
-        if (task is null) return NotFound();
+        var t = await _db.WorkOrderTasks.FirstOrDefaultAsync(x => x.Id == id);
+        if (t is null) return NotFound();
 
-        _db.WorkOrderTasks.Remove(task);
+        _db.WorkOrderTasks.Remove(t);
         await _db.SaveChangesAsync();
         return NoContent();
     }
