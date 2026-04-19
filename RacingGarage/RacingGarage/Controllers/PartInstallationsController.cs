@@ -47,7 +47,9 @@ public class PartInstallationsController : ControllerBase
                 LocationCode = pi.InventoryLocation.Code,
                 Quantity = pi.Quantity,
                 InstalledByUserId = pi.InstalledByUserId,
-                InstalledByName = pi.InstalledByUser != null ? pi.InstalledByUser.Name : null,
+                InstalledByName = pi.InstalledByUser != null
+                    ? (pi.InstalledByUser.FirstName + " " + pi.InstalledByUser.LastName).Trim()
+                    : null,
                 InstalledAt = pi.InstalledAt,
                 Notes = pi.Notes
             })
@@ -74,7 +76,9 @@ public class PartInstallationsController : ControllerBase
                 LocationCode = x.InventoryLocation.Code,
                 Quantity = x.Quantity,
                 InstalledByUserId = x.InstalledByUserId,
-                InstalledByName = x.InstalledByUser != null ? x.InstalledByUser.Name : null,
+                InstalledByName = x.InstalledByUser != null
+                    ? (x.InstalledByUser.FirstName + " " + x.InstalledByUser.LastName).Trim()
+                    : null,
                 InstalledAt = x.InstalledAt,
                 Notes = x.Notes
             })
@@ -163,7 +167,9 @@ public class PartInstallationsController : ControllerBase
                 LocationCode = x.InventoryLocation.Code,
                 Quantity = x.Quantity,
                 InstalledByUserId = x.InstalledByUserId,
-                InstalledByName = x.InstalledByUser != null ? x.InstalledByUser.Name : null,
+                InstalledByName = x.InstalledByUser != null
+                    ? (x.InstalledByUser.FirstName + " " + x.InstalledByUser.LastName).Trim()
+                    : null,
                 InstalledAt = x.InstalledAt,
                 Notes = x.Notes
             })

@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import PageLayout from "../PageLayout";
 import { AuthProvider } from "@/auth/AuthProvider";
+import { createMockJwt } from "@/test-utils";
 
 const mockNavigate = jest.fn();
 
@@ -18,16 +19,17 @@ describe("PageLayout", () => {
   });
 
   it("should render title and children", () => {
-    localStorage.setItem("accessToken", "test-token");
+    localStorage.setItem("accessToken", createMockJwt("Test User"));
     localStorage.setItem(
       "user",
       JSON.stringify({
         userId: 1,
-        name: "Test User",
+        firstName: "Test",
+        lastName: "User",
         email: "test@example.com",
         roles: ["Manager"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
-      })
+      }),
     );
 
     render(
@@ -37,7 +39,7 @@ describe("PageLayout", () => {
             <div>Page Content</div>
           </PageLayout>
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText("Test Page")).toBeInTheDocument();
@@ -45,16 +47,17 @@ describe("PageLayout", () => {
   });
 
   it("should render subtitle when provided", () => {
-    localStorage.setItem("accessToken", "test-token");
+    localStorage.setItem("accessToken", createMockJwt("Test User"));
     localStorage.setItem(
       "user",
       JSON.stringify({
         userId: 1,
-        name: "Test User",
+        firstName: "Test",
+        lastName: "User",
         email: "test@example.com",
         roles: ["Manager"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
-      })
+      }),
     );
 
     render(
@@ -64,23 +67,24 @@ describe("PageLayout", () => {
             <div>Content</div>
           </PageLayout>
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText("Test Subtitle")).toBeInTheDocument();
   });
 
   it("should display user name and roles", () => {
-    localStorage.setItem("accessToken", "test-token");
+    localStorage.setItem("accessToken", createMockJwt("John Doe"));
     localStorage.setItem(
       "user",
       JSON.stringify({
         userId: 1,
-        name: "John Doe",
+        firstName: "John",
+        lastName: "Doe",
         email: "john@example.com",
         roles: ["Manager", "Mechanic"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
-      })
+      }),
     );
 
     render(
@@ -90,7 +94,7 @@ describe("PageLayout", () => {
             <div>Content</div>
           </PageLayout>
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText(/Logged in as John Doe/)).toBeInTheDocument();
@@ -98,16 +102,17 @@ describe("PageLayout", () => {
   });
 
   it("should navigate to home when Home button is clicked", () => {
-    localStorage.setItem("accessToken", "test-token");
+    localStorage.setItem("accessToken", createMockJwt("Test User"));
     localStorage.setItem(
       "user",
       JSON.stringify({
         userId: 1,
-        name: "Test User",
+        firstName: "Test",
+        lastName: "User",
         email: "test@example.com",
         roles: ["Manager"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
-      })
+      }),
     );
 
     render(
@@ -117,7 +122,7 @@ describe("PageLayout", () => {
             <div>Content</div>
           </PageLayout>
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const homeButton = screen.getByRole("button", { name: /home/i });
@@ -127,16 +132,17 @@ describe("PageLayout", () => {
   });
 
   it("should logout and navigate to login when Logout button is clicked", () => {
-    localStorage.setItem("accessToken", "test-token");
+    localStorage.setItem("accessToken", createMockJwt("Test User"));
     localStorage.setItem(
       "user",
       JSON.stringify({
         userId: 1,
-        name: "Test User",
+        firstName: "Test",
+        lastName: "User",
         email: "test@example.com",
         roles: ["Manager"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
-      })
+      }),
     );
 
     render(
@@ -146,7 +152,7 @@ describe("PageLayout", () => {
             <div>Content</div>
           </PageLayout>
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const logoutButton = screen.getByRole("button", { name: /logout/i });
@@ -158,16 +164,17 @@ describe("PageLayout", () => {
   });
 
   it("should render rightSlot when provided", () => {
-    localStorage.setItem("accessToken", "test-token");
+    localStorage.setItem("accessToken", createMockJwt("Test User"));
     localStorage.setItem(
       "user",
       JSON.stringify({
         userId: 1,
-        name: "Test User",
+        firstName: "Test",
+        lastName: "User",
         email: "test@example.com",
         roles: ["Manager"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
-      })
+      }),
     );
 
     render(
@@ -180,25 +187,26 @@ describe("PageLayout", () => {
             <div>Content</div>
           </PageLayout>
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(
-      screen.getByRole("button", { name: "Custom Action" })
+      screen.getByRole("button", { name: "Custom Action" }),
     ).toBeInTheDocument();
   });
 
   it("should handle users with no roles", () => {
-    localStorage.setItem("accessToken", "test-token");
+    localStorage.setItem("accessToken", createMockJwt("No Role User"));
     localStorage.setItem(
       "user",
       JSON.stringify({
         userId: 1,
-        name: "No Role User",
+        firstName: "No Role",
+        lastName: "User",
         email: "norole@example.com",
         roles: [],
         expiresAtUtc: "2026-12-31T23:59:59Z",
-      })
+      }),
     );
 
     render(
@@ -208,7 +216,7 @@ describe("PageLayout", () => {
             <div>Content</div>
           </PageLayout>
         </AuthProvider>
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText(/Logged in as No Role User/)).toBeInTheDocument();

@@ -12,7 +12,8 @@ public sealed class LoginResponseDto
     public DateTime ExpiresAtUtc { get; init; }
 
     public int UserId { get; init; }
-    public string Name { get; init; } = "";
+    public string FirstName { get; set; } = null!;
+    public string LastName { get; set; } = null!;
     public string Email { get; init; } = "";
     public List<string> Roles { get; init; } = new();
 }

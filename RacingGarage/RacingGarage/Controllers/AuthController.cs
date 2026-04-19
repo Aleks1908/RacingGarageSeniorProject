@@ -60,7 +60,8 @@ public class AuthController : ControllerBase
             AccessToken = token,
             ExpiresAtUtc = expiresAtUtc,
             UserId = user.Id,
-            Name = user.Name,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
             Email = user.Email,
             Roles = roles
         });
@@ -78,7 +79,7 @@ public class AuthController : ControllerBase
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
-            new("name", user.Name),
+            new("name", user.FullName),
         };
 
         foreach (var role in roles)

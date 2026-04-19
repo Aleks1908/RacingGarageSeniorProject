@@ -41,7 +41,8 @@ public class IssueReportsApiTests : IClassFixture<TestAppFactory>
 
         var user = new AppUser
         {
-            Name = name ?? $"User {roleName}",
+            FirstName = "User",
+            LastName = $"{roleName} {U("N")}",
             Email = $"{Guid.NewGuid():N}@test.local",
             PasswordHash = "hash",
             IsActive = true,
@@ -90,8 +91,7 @@ public class IssueReportsApiTests : IClassFixture<TestAppFactory>
             Status = status,
             CreatedAt = DateTime.UtcNow,
             DueDate = null,
-            ClosedAt = null,
-            LinkedIssueId = null
+            ClosedAt = null
         };
 
         db.WorkOrders.Add(workOrder);
@@ -155,31 +155,37 @@ public class IssueReportsApiTests : IClassFixture<TestAppFactory>
     }
 
     [Fact]
-    public async Task GetAll_driver_only_sees_own_and_cannot_query_other_reporter()
+    public async Task GetAll_driver_can_filter_by_reportedByUserId()
     {
         var driver1 = await SeedUserAsync("Driver");
         var driver2 = await SeedUserAsync("Driver");
         var carId = await SeedTeamCarAsync();
 
-        await SeedIssueAsync(carId, driver1);
-        await SeedIssueAsync(carId, driver2);
+        var own = await SeedIssueAsync(carId, driver1, severity: "High");
+        await SeedIssueAsync(carId, driver2, severity: "High");
 
         var client = _factory.CreateClient().AsUser(userId: driver1, roles: "Driver");
 
-        var res = await client.GetAsync($"/api/issue-reports?reportedByUserId={driver2}");
+        var res = await client.GetAsync($"/api/issue-reports?severity=High&reportedByUserId={driver1}");
 
-        res.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var list = await res.Content.ReadFromJsonAsync<List<IssueReportReadDto>>();
+        list.Should().NotBeNull();
+
+        list!.Select(x => x.Id).Should().Contain(own);
+        list.All(x => x.ReportedByUserId == driver1).Should().BeTrue();
     }
 
     [Fact]
-    public async Task GetAll_driver_defaults_to_self_when_reportedByUserId_not_provided()
+    public async Task GetAll_driver_returns_all_matching_issues_when_reportedByUserId_not_provided()
     {
         var driver1 = await SeedUserAsync("Driver");
         var driver2 = await SeedUserAsync("Driver");
         var carId = await SeedTeamCarAsync();
 
-        var ownIssueId = await SeedIssueAsync(carId, driver1, severity: "High");
-        await SeedIssueAsync(carId, driver2, severity: "High");
+        var issue1 = await SeedIssueAsync(carId, driver1, severity: "High");
+        var issue2 = await SeedIssueAsync(carId, driver2, severity: "High");
 
         var client = _factory.CreateClient().AsUser(userId: driver1, roles: "Driver");
 
@@ -190,8 +196,8 @@ public class IssueReportsApiTests : IClassFixture<TestAppFactory>
         var list = await res.Content.ReadFromJsonAsync<List<IssueReportReadDto>>();
         list.Should().NotBeNull();
 
-        list!.Select(x => x.Id).Should().Contain(ownIssueId);
-        list.All(x => x.ReportedByUserId == driver1).Should().BeTrue();
+        list!.Select(x => x.Id).Should().Contain(new[] { issue1, issue2 });
+        list.All(x => x.Severity == "High").Should().BeTrue();
     }
 
     [Fact]
@@ -351,14 +357,6 @@ public class IssueReportsApiTests : IClassFixture<TestAppFactory>
         var issueId = await SeedIssueAsync(carId, driverId, status: "Linked", linkedWorkOrderId: workOrderId);
 
 
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var workOrder = await db.WorkOrders.FirstAsync(w => w.Id == workOrderId);
-            workOrder.LinkedIssueId = issueId;
-            await db.SaveChangesAsync();
-        }
-
         var client = _factory.CreateClient().AsUser(userId: mgrId, roles: "Manager");
 
         var res = await client.PutAsJsonAsync($"/api/issue-reports/{issueId}", new
@@ -377,9 +375,6 @@ public class IssueReportsApiTests : IClassFixture<TestAppFactory>
         issue.LinkedWorkOrderId.Should().BeNull();
         issue.Status.Should().Be("Open");
         issue.ClosedAt.Should().BeNull();
-
-        var workOrderAfter = await db2.WorkOrders.FirstAsync(w => w.Id == workOrderId);
-        workOrderAfter.LinkedIssueId.Should().BeNull();
     }
 
     [Fact]
@@ -422,10 +417,8 @@ public class IssueReportsApiTests : IClassFixture<TestAppFactory>
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var issue = await db.IssueReports.FirstAsync(i => i.Id == issueId);
-        var workOrder = await db.WorkOrders.FirstAsync(w => w.Id == workOrderId);
 
         issue.LinkedWorkOrderId.Should().Be(workOrderId);
-        workOrder.LinkedIssueId.Should().Be(issueId);
 
         issue.Status.Should().Be("Linked");
         issue.ClosedAt.Should().BeNull();
@@ -468,14 +461,6 @@ public class IssueReportsApiTests : IClassFixture<TestAppFactory>
         var workOrderId = await SeedWorkOrderAsync(carId, createdByUserId: driverId, status: "Open");
 
         var issueA = await SeedIssueAsync(carId, driverId, status: "Linked", linkedWorkOrderId: workOrderId);
-
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var workOrder = await db.WorkOrders.FirstAsync(w => w.Id == workOrderId);
-            workOrder.LinkedIssueId = issueA;
-            await db.SaveChangesAsync();
-        }
 
         var issueB = await SeedIssueAsync(carId, driverId, status: "Open");
 
@@ -525,13 +510,6 @@ public class IssueReportsApiTests : IClassFixture<TestAppFactory>
         var workOrderId = await SeedWorkOrderAsync(carId, createdByUserId: driverId, status: "Open");
         var issueId = await SeedIssueAsync(carId, driverId, status: "Linked", linkedWorkOrderId: workOrderId);
 
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var workOrder = await db.WorkOrders.FirstAsync(w => w.Id == workOrderId);
-            workOrder.LinkedIssueId = issueId;
-            await db.SaveChangesAsync();
-        }
 
         var client = _factory.CreateClient().AsUser(userId: mgrId, roles: "Manager");
 
@@ -543,8 +521,5 @@ public class IssueReportsApiTests : IClassFixture<TestAppFactory>
         var db2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
 
         (await db2.IssueReports.AnyAsync(i => i.Id == issueId)).Should().BeFalse();
-
-        var workOrderAfter = await db2.WorkOrders.FirstAsync(w => w.Id == workOrderId);
-        workOrderAfter.LinkedIssueId.Should().BeNull();
     }
 }

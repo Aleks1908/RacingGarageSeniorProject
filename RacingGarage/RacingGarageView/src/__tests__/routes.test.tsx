@@ -2,10 +2,12 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "@/auth/AuthProvider";
 import AppRoutes from "../routes";
+import { createMockJwt } from "@/test-utils";
 
 interface TestUser {
   userId: number;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   roles: string[];
   expiresAtUtc: string;
@@ -82,13 +84,14 @@ function renderWithAuth(initialRoute: string, user?: TestUser | null) {
   if (user !== null) {
     const defaultUser: TestUser = user || {
       userId: 1,
-      name: "Test User",
+      firstName: "Test",
+      lastName: "User",
       email: "test@test.com",
       roles: ["Viewer"],
       expiresAtUtc: "2026-12-31T23:59:59Z",
     };
 
-    localStorage.setItem("accessToken", "test-token");
+    localStorage.setItem("accessToken", createMockJwt("Test User"));
     localStorage.setItem("user", JSON.stringify(defaultUser));
   }
 
@@ -97,7 +100,7 @@ function renderWithAuth(initialRoute: string, user?: TestUser | null) {
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -172,7 +175,8 @@ describe("AppRoutes", () => {
     it("allows Manager to access suppliers page", () => {
       renderWithAuth("/suppliers", {
         userId: 1,
-        name: "Manager",
+        firstName: "Manager",
+        lastName: "User",
         email: "manager@test.com",
         roles: ["Manager"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -184,7 +188,8 @@ describe("AppRoutes", () => {
     it("allows PartsClerk to access suppliers page", () => {
       renderWithAuth("/suppliers", {
         userId: 2,
-        name: "Parts Clerk",
+        firstName: "Parts",
+        lastName: "Clerk",
         email: "clerk@test.com",
         roles: ["PartsClerk"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -196,7 +201,8 @@ describe("AppRoutes", () => {
     it("redirects non-authorized user from suppliers page", async () => {
       renderWithAuth("/suppliers", {
         userId: 3,
-        name: "Viewer",
+        firstName: "Viewer",
+        lastName: "User",
         email: "viewer@test.com",
         roles: ["Viewer"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -210,7 +216,8 @@ describe("AppRoutes", () => {
     it("allows Manager to access inventory locations page", () => {
       renderWithAuth("/inventory-locations", {
         userId: 1,
-        name: "Manager",
+        firstName: "Manager",
+        lastName: "User",
         email: "manager@test.com",
         roles: ["Manager"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -222,7 +229,8 @@ describe("AppRoutes", () => {
     it("allows PartsClerk to access inventory locations page", () => {
       renderWithAuth("/inventory-locations", {
         userId: 2,
-        name: "Parts Clerk",
+        firstName: "Parts",
+        lastName: "Clerk",
         email: "clerk@test.com",
         roles: ["PartsClerk"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -234,7 +242,8 @@ describe("AppRoutes", () => {
     it("redirects non-authorized user from inventory locations page", async () => {
       renderWithAuth("/inventory-locations", {
         userId: 3,
-        name: "Viewer",
+        firstName: "Viewer",
+        lastName: "User",
         email: "viewer@test.com",
         roles: ["Viewer"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -248,7 +257,8 @@ describe("AppRoutes", () => {
     it("allows Manager to access parts page", () => {
       renderWithAuth("/parts", {
         userId: 1,
-        name: "Manager",
+        firstName: "Manager",
+        lastName: "User",
         email: "manager@test.com",
         roles: ["Manager"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -260,7 +270,8 @@ describe("AppRoutes", () => {
     it("allows PartsClerk to access parts page", () => {
       renderWithAuth("/parts", {
         userId: 2,
-        name: "Parts Clerk",
+        firstName: "Parts",
+        lastName: "Clerk",
         email: "clerk@test.com",
         roles: ["PartsClerk"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -272,7 +283,8 @@ describe("AppRoutes", () => {
     it("redirects non-authorized user from parts page", async () => {
       renderWithAuth("/parts", {
         userId: 3,
-        name: "Viewer",
+        firstName: "Viewer",
+        lastName: "User",
         email: "viewer@test.com",
         roles: ["Viewer"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -288,7 +300,8 @@ describe("AppRoutes", () => {
     it("allows Manager to access users page", () => {
       renderWithAuth("/users", {
         userId: 1,
-        name: "Manager",
+        firstName: "Manager",
+        lastName: "User",
         email: "manager@test.com",
         roles: ["Manager"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -300,7 +313,8 @@ describe("AppRoutes", () => {
     it("redirects non-Manager from users page", async () => {
       renderWithAuth("/users", {
         userId: 2,
-        name: "Parts Clerk",
+        firstName: "Parts",
+        lastName: "Clerk",
         email: "clerk@test.com",
         roles: ["PartsClerk"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -358,7 +372,8 @@ describe("AppRoutes", () => {
     it("allows user with multiple roles including Manager to access restricted pages", () => {
       renderWithAuth("/users", {
         userId: 1,
-        name: "Admin",
+        firstName: "Admin",
+        lastName: "User",
         email: "admin@test.com",
         roles: ["Manager", "PartsClerk", "Mechanic"],
         expiresAtUtc: "2026-12-31T23:59:59Z",
@@ -370,7 +385,8 @@ describe("AppRoutes", () => {
     it("allows user with multiple roles including PartsClerk to access parts page", () => {
       renderWithAuth("/parts", {
         userId: 2,
-        name: "Multi Role",
+        firstName: "Multi",
+        lastName: "Role",
         email: "multi@test.com",
         roles: ["Mechanic", "PartsClerk"],
         expiresAtUtc: "2026-12-31T23:59:59Z",

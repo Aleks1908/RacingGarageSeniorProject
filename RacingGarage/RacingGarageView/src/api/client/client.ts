@@ -1,6 +1,26 @@
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL?.toString().replace(/\/$/, "") ??
-  "http://localhost:5164";
+const viteBase = (() => {
+  try {
+    return new Function(
+      "return (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ? import.meta.env.VITE_API_BASE_URL.toString().replace(/\\\\\\/$/, '') : undefined;"
+    )();
+  } catch {
+    return undefined;
+  }
+})();
+
+type GlobalWithEnv = typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+};
+
+const envBase = (() => {
+  const g: GlobalWithEnv | undefined =
+    typeof globalThis !== "undefined"
+      ? (globalThis as GlobalWithEnv)
+      : undefined;
+  return g?.process?.env?.VITE_API_BASE_URL;
+})();
+
+const API_BASE = viteBase ?? envBase ?? "http://localhost:5164";
 
 type ApiError = {
   status: number;

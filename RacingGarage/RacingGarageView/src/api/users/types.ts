@@ -1,6 +1,7 @@
 export type UserRead = {
   id: number;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   isActive: boolean;
   createdAt: string;
@@ -8,7 +9,8 @@ export type UserRead = {
 };
 
 export type UserCreate = {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   role: string;
@@ -19,7 +21,8 @@ export type UserSetRole = {
 };
 
 export type UpdateUserDto = {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   oldPassword: string;
 };

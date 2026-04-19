@@ -16,7 +16,8 @@ export default function UserSettingsPage() {
   const { user, setSession } = useAuth();
   const nav = useNavigate();
 
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [profilePassword, setProfilePassword] = useState("");
 
@@ -28,29 +29,43 @@ export default function UserSettingsPage() {
   const [savingPassword, setSavingPassword] = useState(false);
 
   useEffect(() => {
-    setName(user?.name ?? "");
+    setFirstName(user?.firstName ?? "");
+    setLastName(user?.lastName ?? "");
     setEmail(user?.email ?? "");
     setProfilePassword("");
   }, [user]);
 
   const profileChanged = useMemo(() => {
-    const n = name.trim();
+    const fn = firstName.trim();
+    const ln = lastName.trim();
     const e = email.trim();
-    return n !== (user?.name ?? "") || e !== (user?.email ?? "");
-  }, [name, email, user?.name, user?.email]);
+    return (
+      fn !== (user?.firstName ?? "") ||
+      ln !== (user?.lastName ?? "") ||
+      e !== (user?.email ?? "")
+    );
+  }, [
+    firstName,
+    lastName,
+    email,
+    user?.firstName,
+    user?.lastName,
+    user?.email,
+  ]);
 
   const canSaveProfile = useMemo(() => {
     if (!user) return false;
-    if (!name.trim()) return false;
+    if (!firstName.trim()) return false;
+    if (!lastName.trim()) return false;
     if (!email.trim()) return false;
     if (!profilePassword) return false;
     if (!profileChanged) return false;
     return true;
-  }, [user, name, email, profilePassword, profileChanged]);
+  }, [user, firstName, lastName, email, profilePassword, profileChanged]);
 
   const startedPasswordEdit = useMemo(
     () => !!oldPassword || !!newPassword || !!confirmNewPassword,
-    [oldPassword, newPassword, confirmNewPassword]
+    [oldPassword, newPassword, confirmNewPassword],
   );
 
   const passwordError = useMemo(() => {
@@ -78,7 +93,8 @@ export default function UserSettingsPage() {
     setSavingProfile(true);
     try {
       const resp = await updateUser({
-        name: name.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         email: email.trim(),
         oldPassword: profilePassword,
       });
@@ -148,13 +164,24 @@ export default function UserSettingsPage() {
 
             <div className="grid gap-3">
               <div className="grid gap-1">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="firstName">First Name</Label>
                 <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  autoComplete="name"
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Your first name"
+                  autoComplete="given-name"
+                />
+              </div>
+
+              <div className="grid gap-1">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Your last name"
+                  autoComplete="family-name"
                 />
               </div>
 

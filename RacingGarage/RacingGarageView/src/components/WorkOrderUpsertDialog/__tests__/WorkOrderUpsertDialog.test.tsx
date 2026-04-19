@@ -53,7 +53,8 @@ const mockCars = [
 const mockMechanics = [
   {
     id: 10,
-    name: "John Doe",
+    firstName: "John",
+    lastName: "Doe",
     email: "john@example.com",
     isActive: true,
     createdAt: "2023-01-01T00:00:00Z",
@@ -61,7 +62,8 @@ const mockMechanics = [
   },
   {
     id: 11,
-    name: "Jane Smith",
+    firstName: "Jane",
+    lastName: "Smith",
     email: "jane@example.com",
     isActive: true,
     createdAt: "2023-01-01T00:00:00Z",
@@ -138,11 +140,11 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       expect(
-        screen.getByRole("heading", { name: "New Work Order" })
+        screen.getByRole("heading", { name: "New Work Order" }),
       ).toBeInTheDocument();
       expect(screen.getByLabelText(/Car/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/Title/i)).toBeInTheDocument();
@@ -160,11 +162,11 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       expect(
-        screen.getByRole("heading", { name: "Edit Work Order" })
+        screen.getByRole("heading", { name: "Edit Work Order" }),
       ).toBeInTheDocument();
     });
 
@@ -178,11 +180,11 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       expect(
-        container.querySelector('[role="dialog"]')
+        container.querySelector('[role="dialog"]'),
       ).not.toBeInTheDocument();
     });
 
@@ -197,7 +199,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const cancelButton = screen.getByRole("button", { name: "Cancel" });
@@ -219,7 +221,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const titleInput = screen.getByPlaceholderText(/Brake inspection/i);
@@ -246,7 +248,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const carSelect = screen.getByRole("combobox", { name: /Car/i });
@@ -285,7 +287,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const carSelect = screen.getByRole("combobox", { name: /Car/i });
@@ -311,7 +313,7 @@ describe("WorkOrderUpsertDialog", () => {
             createdByUserId: 10,
             priority: "Medium",
             status: "Open",
-          })
+          }),
         );
       });
 
@@ -335,7 +337,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const carSelect = screen.getByRole("combobox", { name: /Car/i });
@@ -363,7 +365,7 @@ describe("WorkOrderUpsertDialog", () => {
       });
       await user.click(mechanicSelect);
       const mechanic = await screen.findByRole("option", {
-        name: /John Doe/i,
+        name: /John Doe.*john@example\.com/i,
       });
       await user.click(mechanic);
 
@@ -384,7 +386,7 @@ describe("WorkOrderUpsertDialog", () => {
             priority: "High",
             assignedToUserId: 10,
             dueDate: expect.stringContaining("2024-01-20"),
-          })
+          }),
         );
       });
     });
@@ -403,7 +405,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const carSelect = screen.getByRole("combobox", { name: /Car/i });
@@ -440,14 +442,14 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       expect(
-        screen.getByDisplayValue("Brake system inspection")
+        screen.getByDisplayValue("Brake system inspection"),
       ).toBeInTheDocument();
       expect(
-        screen.getByDisplayValue("Check brake pads and rotors")
+        screen.getByDisplayValue("Check brake pads and rotors"),
       ).toBeInTheDocument();
     });
 
@@ -464,7 +466,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const titleInput = screen.getByDisplayValue("Brake system inspection");
@@ -481,7 +483,7 @@ describe("WorkOrderUpsertDialog", () => {
           1,
           expect.objectContaining({
             title: "Updated Work Order",
-          })
+          }),
         );
       });
 
@@ -502,7 +504,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const statusSelect = screen.getByRole("combobox", { name: /Status/i });
@@ -523,7 +525,7 @@ describe("WorkOrderUpsertDialog", () => {
           expect.objectContaining({
             status: "Closed",
             closedAt: expect.any(String),
-          })
+          }),
         );
       });
     });
@@ -540,12 +542,12 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       expect(screen.getByText(/#42 — Ferrari488 GT3/i)).toBeInTheDocument();
       expect(
-        screen.queryByRole("combobox", { name: /Car/i })
+        screen.queryByRole("combobox", { name: /Car/i }),
       ).not.toBeInTheDocument();
     });
 
@@ -559,7 +561,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       expect(screen.getByText(/#42 — Ferrari488 GT3/i)).toBeInTheDocument();
@@ -580,7 +582,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const carSelect = screen.getByRole("combobox", { name: /Car/i });
@@ -615,7 +617,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const carSelect = screen.getByRole("combobox", { name: /Car/i });
@@ -664,7 +666,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const carSelect = screen.getByRole("combobox", { name: /Car/i });
@@ -678,7 +680,7 @@ describe("WorkOrderUpsertDialog", () => {
         () => {
           expect(screen.getByText(/Failed to load/i)).toBeInTheDocument();
         },
-        { timeout: 3000 }
+        { timeout: 3000 },
       );
     });
 
@@ -712,7 +714,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       await waitFor(() => {
@@ -733,7 +735,7 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const statusSelect = screen.getByRole("combobox", {
@@ -742,13 +744,13 @@ describe("WorkOrderUpsertDialog", () => {
       await user.click(statusSelect);
 
       expect(
-        await screen.findByRole("option", { name: "Open" })
+        await screen.findByRole("option", { name: "Open" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("option", { name: "In Progress" })
+        screen.getByRole("option", { name: "In Progress" }),
       ).toBeInTheDocument();
       expect(
-        screen.queryByRole("option", { name: "Closed" })
+        screen.queryByRole("option", { name: "Closed" }),
       ).not.toBeInTheDocument();
     });
 
@@ -763,20 +765,20 @@ describe("WorkOrderUpsertDialog", () => {
           mechanics={mockMechanics}
           currentUserId={10}
           onSaved={mockOnSaved}
-        />
+        />,
       );
 
       const statusSelect = screen.getByRole("combobox", { name: /Status/i });
       await user.click(statusSelect);
 
       expect(
-        await screen.findByRole("option", { name: "Open" })
+        await screen.findByRole("option", { name: "Open" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("option", { name: "In Progress" })
+        screen.getByRole("option", { name: "In Progress" }),
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("option", { name: "Closed" })
+        screen.getByRole("option", { name: "Closed" }),
       ).toBeInTheDocument();
     });
   });

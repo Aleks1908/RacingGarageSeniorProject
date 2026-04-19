@@ -2,7 +2,8 @@ namespace RacingGarage.dto;
 
 public sealed class UserUpdateDto
 {
-    public string Name { get; init; } = "";
+    public string FirstName { get; set; } = null!;
+    public string LastName { get; set; } = null!;
     public string Email { get; init; } = "";
     
     public string OldPassword { get; init; } = "";

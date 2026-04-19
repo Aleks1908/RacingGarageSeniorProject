@@ -85,24 +85,24 @@ export default function TeamCarPage() {
 
   const canManageCar = useMemo(
     () => roles.includes("Manager") || roles.includes("Mechanic"),
-    [roles]
+    [roles],
   );
 
   const canCreateIssue = useMemo(
     () => roles.includes("Manager") || roles.includes("Driver"),
-    [roles]
+    [roles],
   );
 
   const canCreateWorkOrder = useMemo(
     () => roles.includes("Manager") || roles.includes("Mechanic"),
-    [roles]
+    [roles],
   );
 
   const canEditIssue = roles.includes("Manager") || roles.includes("Driver");
 
   const canManageSessions = useMemo(
     () => roles.includes("Manager") || roles.includes("Driver"),
-    [roles]
+    [roles],
   );
 
   const [data, setData] = useState<TeamCarDashboard | null>(null);
@@ -117,7 +117,7 @@ export default function TeamCarPage() {
 
   const mechanics = useMemo(
     () => users.filter((u) => u.isActive && u.roles.includes("Mechanic")),
-    [users]
+    [users],
   );
 
   const [openIssue, setOpenIssue] = useState(false);
@@ -125,7 +125,7 @@ export default function TeamCarPage() {
   const [sessions, setSessions] = useState<CarSessionRead[]>([]);
   const [openSession, setOpenSession] = useState(false);
   const [editingSession, setEditingSession] = useState<CarSessionRead | null>(
-    null
+    null,
   );
 
   const sessionsForCar = useMemo(() => {
@@ -133,7 +133,7 @@ export default function TeamCarPage() {
       .filter((s) => s.teamCarId === carId)
       .slice()
       .sort(
-        (a, b) => (b.date ?? "").localeCompare(a.date ?? "") || b.id - a.id
+        (a, b) => (b.date ?? "").localeCompare(a.date ?? "") || b.id - a.id,
       );
   }, [sessions, carId]);
 
@@ -521,7 +521,6 @@ export default function TeamCarPage() {
                     <TableHead>Title</TableHead>
                     <TableHead>Priority</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Linked</TableHead>
                     <TableHead>Assigned</TableHead>
                     <TableHead className="text-right">Created</TableHead>
                   </TableRow>
@@ -555,15 +554,6 @@ export default function TeamCarPage() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary">{w.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {w.linkedIssueId ? (
-                            <Badge variant="outline">
-                              Issue #{w.linkedIssueId}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
                         </TableCell>
                         <TableCell className="text-sm">
                           {w.assignedToName ?? "—"}

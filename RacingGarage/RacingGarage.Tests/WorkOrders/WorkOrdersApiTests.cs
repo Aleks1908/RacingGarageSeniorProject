@@ -46,9 +46,14 @@ public class WorkOrdersApiTests : IClassFixture<TestAppFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+        var parts = (name ?? "").Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+        var first = parts.Length > 0 ? parts[0] : "Test";
+        var last  = parts.Length > 1 ? parts[1] : "User";
+
         var u = new AppUser
         {
-            Name = name,
+            FirstName = first,
+            LastName = last,
             Email = $"{Unique(emailPrefix)}@test.local",
             PasswordHash = "x",
         };
@@ -127,8 +132,7 @@ public class WorkOrdersApiTests : IClassFixture<TestAppFactory>
         string status = "Open",
         string priority = "Medium",
         int? assignedToUserId = null,
-        int? carSessionId = null,
-        int? linkedIssueId = null)
+        int? carSessionId = null)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -146,8 +150,7 @@ public class WorkOrdersApiTests : IClassFixture<TestAppFactory>
             Status = status,
             CreatedAt = DateTime.UtcNow,
             DueDate = null,
-            ClosedAt = null,
-            LinkedIssueId = linkedIssueId
+            ClosedAt = null
         };
 
         db.WorkOrders.Add(wo);
@@ -462,7 +465,6 @@ public class WorkOrdersApiTests : IClassFixture<TestAppFactory>
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var wo = await db.WorkOrders.OrderByDescending(w => w.Id).FirstAsync();
-        wo.LinkedIssueId.Should().Be(issueId);
 
         var issue = await db.IssueReports.FirstAsync(i => i.Id == issueId);
         issue.LinkedWorkOrderId.Should().Be(wo.Id);
@@ -529,7 +531,7 @@ public class WorkOrdersApiTests : IClassFixture<TestAppFactory>
         var carId = await SeedCarAsync(status: "Active");
 
         var issueId = await SeedIssueAsync(carId, creatorId, status: "Open");
-        var woId = await SeedWorkOrderAsync(carId, creatorId, status: "Open", linkedIssueId: issueId);
+        var woId = await SeedWorkOrderAsync(carId, creatorId, status: "Open");
         
         using (var scope = _factory.Services.CreateScope())
         {
@@ -612,7 +614,7 @@ public class WorkOrdersApiTests : IClassFixture<TestAppFactory>
         var carId = await SeedCarAsync(status: "Service");
 
         var issueId = await SeedIssueAsync(carId, creatorId, status: "Linked");
-        var woId = await SeedWorkOrderAsync(carId, creatorId, status: "Open", linkedIssueId: issueId);
+        var woId = await SeedWorkOrderAsync(carId, creatorId, status: "Open");
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -756,22 +758,20 @@ public class WorkOrdersApiTests : IClassFixture<TestAppFactory>
 
         var client = _factory.CreateClient().AsUser(userId: driverId, roles: "Driver");
 
-        Func<Task> act = async () =>
+        var res = await client.PostAsJsonAsync("/api/work-orders", new
         {
-            await client.PostAsJsonAsync("/api/work-orders", new
-            {
-                teamCarId = carA,
-                title = "WO",
-                linkedIssueId = issueOnB
-            });
-        };
+            teamCarId = carA,
+            title = "WO",
+            linkedIssueId = issueOnB
+        });
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*different cars*");
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await res.Content.ReadAsStringAsync();
+        body.Should().Contain("different car");
     }
     
     [Fact]
-    public async Task Create_with_issue_already_linked_to_another_workorder_throws()
+    public async Task Create_with_issue_already_linked_to_another_workorder_unlinks_previous()
     {
         var driverId = await SeedUserAsync("Driver");
         var creatorId = await SeedUserAsync("Creator");
@@ -792,60 +792,24 @@ public class WorkOrdersApiTests : IClassFixture<TestAppFactory>
 
         var client = _factory.CreateClient().AsUser(userId: driverId, roles: "Driver");
 
-        Func<Task> act = async () =>
-        {
-            await client.PostAsJsonAsync("/api/work-orders", new
-            {
-                teamCarId = carId,
-                title = "New WO",
-                linkedIssueId = issueId
-            });
-        };
-
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*already linked*");
-    }
-    
-    [Fact]
-    public async Task Update_backfills_linkedIssueId_from_issue_linked_workorder()
-    {
-        var creatorId = await SeedUserAsync("Creator");
-        var mechId = await SeedUserAsync("Mechanic");
-        var carId = await SeedCarAsync();
-
-        var woId = await SeedWorkOrderAsync(carId, creatorId, status: "Open", linkedIssueId: null);
-        var issueId = await SeedIssueAsync(carId, reportedByUserId: creatorId, status: "Linked");
-
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var issue = await db.IssueReports.FirstAsync(i => i.Id == issueId);
-            issue.LinkedWorkOrderId = woId;
-            await db.SaveChangesAsync();
-        }
-
-        var client = _factory.CreateClient().AsUser(userId: mechId, roles: "Mechanic");
-
-        var res = await client.PutAsJsonAsync($"/api/work-orders/{woId}", new
+        var res = await client.PostAsJsonAsync("/api/work-orders", new
         {
             teamCarId = carId,
-            title = "Updated",
-            description = "",
-            priority = "Medium",
-            status = "Open",
-            dueDate = (string?)null,
-            closedAt = (string?)null,
-            assignedToUserId = (int?)null,
-            carSessionId = (int?)null,
-            linkedIssueId = (int?)null
+            title = "New WO",
+            linkedIssueId = issueId
         });
 
-        res.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        res.StatusCode.Should().Be(HttpStatusCode.Created);
 
         using var scope2 = _factory.Services.CreateScope();
         var db2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
-        var wo = await db2.WorkOrders.FirstAsync(w => w.Id == woId);
-        wo.LinkedIssueId.Should().Be(issueId);
+
+        var updatedIssue = await db2.IssueReports.FirstAsync(i => i.Id == issueId);
+        var newWo = await db2.WorkOrders.OrderByDescending(w => w.Id).FirstAsync();
+        
+        // Issue should now be linked to the new work order
+        updatedIssue.LinkedWorkOrderId.Should().Be(newWo.Id);
+        updatedIssue.Status.Should().Be("Linked");
     }
     
     [Fact]
@@ -856,7 +820,7 @@ public class WorkOrdersApiTests : IClassFixture<TestAppFactory>
         var carId = await SeedCarAsync(status: "Active");
 
         var issueId = await SeedIssueAsync(carId, creatorId, status: "Closed");
-        var woId = await SeedWorkOrderAsync(carId, creatorId, status: "Closed", linkedIssueId: issueId);
+        var woId = await SeedWorkOrderAsync(carId, creatorId, status: "Closed");
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -880,8 +844,7 @@ public class WorkOrdersApiTests : IClassFixture<TestAppFactory>
             dueDate = (string?)null,
             closedAt = (string?)null,
             assignedToUserId = (int?)null,
-            carSessionId = (int?)null,
-            linkedIssueId = issueId
+            carSessionId = (int?)null
         });
 
         res.StatusCode.Should().Be(HttpStatusCode.NoContent);

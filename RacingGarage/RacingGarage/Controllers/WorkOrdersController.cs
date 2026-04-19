@@ -61,66 +61,6 @@ public class WorkOrdersController : ControllerBase
         car.Status = anyNonClosed ? CAR_STATUS_SERVICE : CAR_STATUS_ACTIVE;
     }
 
-    /// <summary>
-    /// Keeps the two "link id" columns consistent:
-    /// - WorkOrder.LinkedIssueId
-    /// - IssueReport.LinkedWorkOrderId
-    /// Passing issueId=null means "unlink".
-    /// </summary>
-    private async Task SyncWorkOrderIssueLinkAsync(int workOrderId, int? issueId)
-    {
-        var wo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId);
-        if (wo is null) return;
-
-        if (issueId is null)
-        {
-            var prevIssueId = wo.LinkedIssueId;
-            wo.LinkedIssueId = null;
-
-            if (prevIssueId.HasValue)
-            {
-                var prevIssue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == prevIssueId.Value);
-                if (prevIssue != null && prevIssue.LinkedWorkOrderId == workOrderId)
-                    prevIssue.LinkedWorkOrderId = null;
-            }
-
-            var otherIssues = await _db.IssueReports.Where(i => i.LinkedWorkOrderId == workOrderId).ToListAsync();
-            foreach (var i in otherIssues)
-                i.LinkedWorkOrderId = null;
-
-            return;
-        }
-
-        var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == issueId.Value);
-        if (issue is null)
-            throw new InvalidOperationException($"IssueReport '{issueId}' does not exist.");
-
-        if (issue.TeamCarId != wo.TeamCarId)
-            throw new InvalidOperationException("Cannot link Issue and Work Order from different cars.");
-
-        
-        if (issue.LinkedWorkOrderId.HasValue && issue.LinkedWorkOrderId.Value != workOrderId)
-            throw new InvalidOperationException($"IssueReport '{issue.Id}' is already linked to WorkOrder '{issue.LinkedWorkOrderId}'.");
-
-        if (wo.LinkedIssueId.HasValue && wo.LinkedIssueId.Value != issue.Id)
-        {
-            var prevIssue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == wo.LinkedIssueId.Value);
-            if (prevIssue != null && prevIssue.LinkedWorkOrderId == workOrderId)
-                prevIssue.LinkedWorkOrderId = null;
-        }
-
-
-        wo.LinkedIssueId = issue.Id;
-        issue.LinkedWorkOrderId = wo.Id;
-        
-        if (!IsClosed(wo.Status) && !string.Equals(issue.Status, ISSUE_STATUS_CLOSED, StringComparison.OrdinalIgnoreCase))
-        {
-            issue.Status = ISSUE_STATUS_LINKED;
-            issue.ClosedAt = null;
-        }
-    }
-
-    
     private IQueryable<WorkOrderReadDto> ProjectWorkOrderRead(IQueryable<WorkOrder> q)
     {
         return q.Select(w => new WorkOrderReadDto
@@ -129,18 +69,17 @@ public class WorkOrdersController : ControllerBase
             TeamCarId = w.TeamCarId,
             TeamCarNumber = w.TeamCar.CarNumber,
             CreatedByUserId = w.CreatedByUserId,
-            CreatedByName = w.CreatedByUser.Name,
-            AssignedToUserId = w.AssignedToUserId,
-            AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
-            CarSessionId = w.CarSessionId,
+            CreatedByName = (w.CreatedByUser.FirstName + " " + w.CreatedByUser.LastName).Trim(),            AssignedToUserId = w.AssignedToUserId,
+            AssignedToName = w.AssignedToUser != null
+                ? (w.AssignedToUser.FirstName + " " + w.AssignedToUser.LastName).Trim()
+                : null,            CarSessionId = w.CarSessionId,
             Title = w.Title,
             Description = w.Description,
             Priority = w.Priority,
             Status = w.Status,
             CreatedAt = w.CreatedAt,
             DueDate = w.DueDate,
-            ClosedAt = w.ClosedAt,
-            LinkedIssueId = w.LinkedIssueId
+            ClosedAt = w.ClosedAt
         });
     }
 
@@ -222,16 +161,34 @@ public class WorkOrdersController : ControllerBase
             Status = string.IsNullOrWhiteSpace(dto.Status) ? "Open" : dto.Status.Trim(),
 
             CreatedAt = DateTime.UtcNow,
-            DueDate = dto.DueDate,
-
-            LinkedIssueId = dto.LinkedIssueId
+            DueDate = dto.DueDate
         };
 
         _db.WorkOrders.Add(wo);
         await _db.SaveChangesAsync();
 
-        if (wo.LinkedIssueId.HasValue)
-            await SyncWorkOrderIssueLinkAsync(wo.Id, wo.LinkedIssueId);
+        if (dto.LinkedIssueId.HasValue)
+        {
+            var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == dto.LinkedIssueId.Value);
+            if (issue != null)
+            {
+                if (issue.TeamCarId != wo.TeamCarId)
+                    return BadRequest("Cannot link Issue and Work Order from different cars.");
+
+                var otherIssues = await _db.IssueReports
+                    .Where(x => x.LinkedWorkOrderId == wo.Id && x.Id != issue.Id)
+                    .ToListAsync();
+                foreach (var other in otherIssues)
+                {
+                    other.LinkedWorkOrderId = null;
+                    other.Status = "Open";
+                    other.ClosedAt = null;
+                }
+                
+                issue.LinkedWorkOrderId = wo.Id;
+                issue.Status = ISSUE_STATUS_LINKED;
+            }
+        }
 
         await SetCarStatusFromWorkOrdersAsync(
             wo.TeamCarId,
@@ -294,47 +251,22 @@ public class WorkOrdersController : ControllerBase
         var newCarId = wo.TeamCarId;
         var newStatus = wo.Status;
 
-        if (dto.LinkedIssueId.HasValue && dto.LinkedIssueId != wo.LinkedIssueId)
-        {
-            wo.LinkedIssueId = dto.LinkedIssueId;
-            await SyncWorkOrderIssueLinkAsync(wo.Id, wo.LinkedIssueId);
-        }
-
-        if (!wo.LinkedIssueId.HasValue)
-        {
-            var issueId = await _db.IssueReports
-                .AsNoTracking()
-                .Where(i => i.LinkedWorkOrderId == wo.Id)
-                .OrderByDescending(i => i.ReportedAt)
-                .Select(i => (int?)i.Id)
-                .FirstOrDefaultAsync();
-
-            if (issueId.HasValue)
-            {
-                wo.LinkedIssueId = issueId.Value;
-            }
-        }
-
         if (!string.Equals(prevStatus, newStatus, StringComparison.OrdinalIgnoreCase))
         {
-            if (wo.LinkedIssueId.HasValue)
+            var linkedIssue = await _db.IssueReports
+                .FirstOrDefaultAsync(i => i.LinkedWorkOrderId == wo.Id);
+            
+            if (linkedIssue != null)
             {
-                var linkedIssue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == wo.LinkedIssueId.Value);
-                if (linkedIssue != null)
+                if (IsClosed(newStatus))
                 {
-                    if (linkedIssue.LinkedWorkOrderId != wo.Id)
-                        linkedIssue.LinkedWorkOrderId = wo.Id;
-
-                    if (IsClosed(newStatus))
-                    {
-                        linkedIssue.Status = ISSUE_STATUS_CLOSED;
-                        linkedIssue.ClosedAt ??= DateTime.UtcNow;
-                    }
-                    else
-                    {
-                        linkedIssue.Status = ISSUE_STATUS_LINKED;
-                        linkedIssue.ClosedAt = null;
-                    }
+                    linkedIssue.Status = ISSUE_STATUS_CLOSED;
+                    linkedIssue.ClosedAt ??= DateTime.UtcNow;
+                }
+                else
+                {
+                    linkedIssue.Status = ISSUE_STATUS_LINKED;
+                    linkedIssue.ClosedAt = null;
                 }
             }
         }
@@ -359,7 +291,7 @@ public class WorkOrdersController : ControllerBase
     }
 
     // DELETE /api/work-orders/{id}
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Mechanic,Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -367,16 +299,19 @@ public class WorkOrdersController : ControllerBase
         if (wo is null) return NotFound();
 
         var carId = wo.TeamCarId;
-        var linkedIssueId = wo.LinkedIssueId;
+
+        var linkedIssue = await _db.IssueReports
+            .FirstOrDefaultAsync(i => i.LinkedWorkOrderId == id);
+        
+        if (linkedIssue != null)
+        {
+            linkedIssue.LinkedWorkOrderId = null;
+            linkedIssue.Status = "Open";
+            linkedIssue.ClosedAt = null;
+        }
 
         _db.WorkOrders.Remove(wo);
 
-        if (linkedIssueId.HasValue)
-        {
-            var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == linkedIssueId.Value);
-            if (issue != null && issue.LinkedWorkOrderId == id)
-                issue.LinkedWorkOrderId = null;
-        }
 
         await SetCarStatusFromWorkOrdersAsync(
             carId,
@@ -399,30 +334,26 @@ public class WorkOrdersController : ControllerBase
 
         if (wo is null) return NotFound();
         
-        IssueReportReadDto? linkedIssue = null;
-        if (wo.LinkedIssueId.HasValue)
-        {
-            linkedIssue = await _db.IssueReports
-                .AsNoTracking()
-                .Where(i => i.Id == wo.LinkedIssueId.Value)
-                .Select(i => new IssueReportReadDto
-                {
-                    Id = i.Id,
-                    TeamCarId = i.TeamCarId,
-                    TeamCarNumber = i.TeamCar.CarNumber,
-                    CarSessionId = i.CarSessionId,
-                    ReportedByUserId = i.ReportedByUserId,
-                    ReportedByName = i.ReportedByUser.Name,
-                    LinkedWorkOrderId = i.LinkedWorkOrderId,
-                    Title = i.Title,
-                    Description = i.Description,
-                    Severity = i.Severity,
-                    Status = i.Status,
-                    ReportedAt = i.ReportedAt,
-                    ClosedAt = i.ClosedAt
-                })
-                .FirstOrDefaultAsync();
-        }
+        var linkedIssue = await _db.IssueReports
+            .AsNoTracking()
+            .Where(i => i.LinkedWorkOrderId == id)
+            .Select(i => new IssueReportReadDto
+            {
+                Id = i.Id,
+                TeamCarId = i.TeamCarId,
+                TeamCarNumber = i.TeamCar.CarNumber,
+                CarSessionId = i.CarSessionId,
+                ReportedByUserId = i.ReportedByUserId,
+                ReportedByName = (i.ReportedByUser.FirstName + " " + i.ReportedByUser.LastName).Trim(),
+                LinkedWorkOrderId = i.LinkedWorkOrderId,
+                Title = i.Title,
+                Description = i.Description,
+                Severity = i.Severity,
+                Status = i.Status,
+                ReportedAt = i.ReportedAt,
+                ClosedAt = i.ClosedAt
+            })
+            .FirstOrDefaultAsync();
 
         var tasks = await _db.WorkOrderTasks
             .AsNoTracking()
@@ -450,8 +381,7 @@ public class WorkOrdersController : ControllerBase
                 Id = l.Id,
                 WorkOrderTaskId = l.WorkOrderTaskId,
                 MechanicUserId = l.MechanicUserId,
-                MechanicName = l.MechanicUser.Name,
-                Minutes = l.Minutes,
+                MechanicName = (l.MechanicUser.FirstName + " " + l.MechanicUser.LastName).Trim(),                Minutes = l.Minutes,
                 LogDate = l.LogDate,
                 Comment = l.Comment
             })
@@ -472,8 +402,9 @@ public class WorkOrdersController : ControllerBase
                 LocationCode = pi.InventoryLocation.Code,
                 Quantity = pi.Quantity,
                 InstalledByUserId = pi.InstalledByUserId,
-                InstalledByName = pi.InstalledByUser != null ? pi.InstalledByUser.Name : null,
-                InstalledAt = pi.InstalledAt,
+                InstalledByName = pi.InstalledByUser != null
+                    ? (pi.InstalledByUser.FirstName + " " + pi.InstalledByUser.LastName).Trim()
+                    : null,                InstalledAt = pi.InstalledAt,
                 Notes = pi.Notes
             })
             .ToListAsync();
@@ -486,8 +417,6 @@ public class WorkOrdersController : ControllerBase
             PartInstallations = installs,
             TotalLaborMinutes = labor.Sum(x => x.Minutes),
             TotalInstalledPartsQty = installs.Sum(x => x.Quantity),
-
-            LinkedIssueId = wo.LinkedIssueId,
             LinkedIssue = linkedIssue
         });
     }

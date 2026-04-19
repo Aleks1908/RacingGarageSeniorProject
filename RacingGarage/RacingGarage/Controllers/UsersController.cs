@@ -37,13 +37,14 @@ public class UsersController : ControllerBase
     private static UserReadDto ToReadDto(AppUser u) => new()
     {
         Id = u.Id,
-        Name = u.Name,
+        FirstName = u.FirstName,
+        LastName = u.LastName,
         Email = u.Email,
         IsActive = u.IsActive,
         CreatedAt = u.CreatedAt,
         Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList()
     };
-    
+
     private string MakeJwt(AppUser user)
     {
         var key = _cfg["Jwt:Key"];
@@ -68,7 +69,7 @@ public class UsersController : ControllerBase
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
-            new(JwtRegisteredClaimNames.Name, user.Name),
+            new(JwtRegisteredClaimNames.Name, $"{user.FirstName} {user.LastName}".Trim()),
         };
 
         foreach (var r in roles)
@@ -89,7 +90,7 @@ public class UsersController : ControllerBase
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-    
+
     // GET /api/users
     [HttpGet]
     public async Task<ActionResult<List<UserReadDto>>> GetAll()
@@ -100,7 +101,8 @@ public class UsersController : ControllerBase
             .Select(u => new UserReadDto
             {
                 Id = u.Id,
-                Name = u.Name,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
                 Email = u.Email,
                 IsActive = u.IsActive,
                 CreatedAt = u.CreatedAt,
@@ -121,7 +123,8 @@ public class UsersController : ControllerBase
             .Select(u => new UserReadDto
             {
                 Id = u.Id,
-                Name = u.Name,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
                 Email = u.Email,
                 IsActive = u.IsActive,
                 CreatedAt = u.CreatedAt,
@@ -138,7 +141,8 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<UserReadDto>> Create([FromBody] UserCreateDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.Name)) return BadRequest("Name is required.");
+        if (string.IsNullOrWhiteSpace(dto.FirstName)) return BadRequest("FirstName is required.");
+        if (string.IsNullOrWhiteSpace(dto.LastName)) return BadRequest("LastName is required.");
         if (string.IsNullOrWhiteSpace(dto.Email)) return BadRequest("Email is required.");
         if (string.IsNullOrWhiteSpace(dto.Password)) return BadRequest("Password is required.");
         if (string.IsNullOrWhiteSpace(dto.Role)) return BadRequest("Role is required.");
@@ -154,7 +158,8 @@ public class UsersController : ControllerBase
 
         var user = new AppUser
         {
-            Name = dto.Name.Trim(),
+            FirstName = dto.FirstName.Trim(),
+            LastName = dto.LastName.Trim(),
             Email = email,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -171,7 +176,8 @@ public class UsersController : ControllerBase
         var read = new UserReadDto
         {
             Id = user.Id,
-            Name = user.Name,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
             Email = user.Email,
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt,
@@ -219,7 +225,7 @@ public class UsersController : ControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
-    
+
     // GET /api/users/me
     [Authorize]
     [HttpGet("me")]
@@ -234,7 +240,8 @@ public class UsersController : ControllerBase
             .Select(u => new UserReadDto
             {
                 Id = u.Id,
-                Name = u.Name,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
                 Email = u.Email,
                 IsActive = u.IsActive,
                 CreatedAt = u.CreatedAt,
@@ -257,8 +264,11 @@ public class UsersController : ControllerBase
         if (string.IsNullOrWhiteSpace(dto.OldPassword))
             return BadRequest("OldPassword is required.");
 
-        if (string.IsNullOrWhiteSpace(dto.Name))
-            return BadRequest("Name is required.");
+        if (string.IsNullOrWhiteSpace(dto.FirstName))
+            return BadRequest("FirstName is required.");
+
+        if (string.IsNullOrWhiteSpace(dto.LastName))
+            return BadRequest("LastName is required.");
 
         if (string.IsNullOrWhiteSpace(dto.Email))
             return BadRequest("Email is required.");
@@ -278,7 +288,8 @@ public class UsersController : ControllerBase
         var emailTaken = await _db.Users.AnyAsync(u => u.Id != user.Id && u.Email.ToLower() == nextEmail);
         if (emailTaken) return Conflict("A user with this email already exists.");
 
-        user.Name = dto.Name.Trim();
+        user.FirstName = dto.FirstName.Trim();
+        user.LastName = dto.LastName.Trim();
         user.Email = nextEmail;
 
         await _db.SaveChangesAsync();

@@ -1,3 +1,5 @@
+using RacingGarage.Dto;
+
 namespace RacingGarage.dto;
 
 public sealed class TeamCarDashboardDto

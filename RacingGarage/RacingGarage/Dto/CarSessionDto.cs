@@ -1,3 +1,5 @@
+namespace RacingGarage.Dto;
+
 public sealed class CarSessionReadDto
 {
     public int Id { get; init; }
@@ -13,7 +15,7 @@ public sealed class CarSessionReadDto
     public string? DriverName { get; init; }
 
     public int Laps { get; init; }
-    public string? Notes { get; init; } // ✅ optional in API response
+    public string? Notes { get; init; }
 }
 
 public sealed class CarSessionCreateDto
@@ -27,7 +29,7 @@ public sealed class CarSessionCreateDto
     public int? DriverUserId { get; init; }
 
     public int Laps { get; init; }
-    public string? Notes { get; init; } // ✅ optional on create
+    public string? Notes { get; init; }
 }
 
 public sealed class CarSessionUpdateDto
@@ -41,5 +43,5 @@ public sealed class CarSessionUpdateDto
     public int? DriverUserId { get; init; }
 
     public int Laps { get; init; }
-    public string? Notes { get; init; } // ✅ optional on update
+    public string? Notes { get; init; }
 }

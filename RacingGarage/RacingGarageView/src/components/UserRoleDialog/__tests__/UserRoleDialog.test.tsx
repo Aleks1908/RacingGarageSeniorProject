@@ -16,7 +16,8 @@ describe("UserRoleDialog", () => {
 
   const mockUser: UserRead = {
     id: 1,
-    name: "John Doe",
+    firstName: "John",
+    lastName: "Doe",
     email: "john@example.com",
     isActive: true,
     roles: ["Mechanic"],
@@ -35,7 +36,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={mockUser}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(screen.getByText("Change role: John Doe")).toBeInTheDocument();
@@ -51,7 +52,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={null}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(screen.getByText("No user selected.")).toBeInTheDocument();
@@ -64,7 +65,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={mockUser}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(screen.queryByText("Change role: John Doe")).not.toBeInTheDocument();
@@ -82,7 +83,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={userWithManagerRole}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(screen.getAllByText("Manager").length).toBeGreaterThan(0);
@@ -95,7 +96,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={mockUser}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     const submitButton = screen.getByRole("button", { name: /save role/i });
@@ -122,7 +123,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={mockUser}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     const submitButton = screen.getByRole("button", { name: /save role/i });
@@ -144,7 +145,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={mockUser}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     const cancelButton = screen.getByRole("button", { name: /cancel/i });
@@ -155,7 +156,7 @@ describe("UserRoleDialog", () => {
 
   it("should disable form during submission", async () => {
     mockSetUserRole.mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100))
+      () => new Promise((resolve) => setTimeout(resolve, 100)),
     );
 
     render(
@@ -164,7 +165,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={mockUser}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     const submitButton = screen.getByRole("button", { name: /save role/i });
@@ -188,7 +189,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={userWithNoRoles}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(screen.getByText(/Current role:/)).toBeInTheDocument();
@@ -201,7 +202,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={mockUser}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     rerender(
@@ -210,11 +211,11 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={null}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(
-      screen.queryByRole("button", { name: /save role/i })
+      screen.queryByRole("button", { name: /save role/i }),
     ).not.toBeInTheDocument();
     expect(mockSetUserRole).not.toHaveBeenCalled();
   });
@@ -223,14 +224,16 @@ describe("UserRoleDialog", () => {
     const user1: UserRead = {
       ...mockUser,
       id: 1,
-      name: "User One",
+      firstName: "User",
+      lastName: "One",
       roles: ["Mechanic"],
     };
 
     const user2: UserRead = {
       ...mockUser,
       id: 2,
-      name: "User Two",
+      firstName: "User",
+      lastName: "Two",
       roles: ["Manager"],
     };
 
@@ -240,7 +243,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={user1}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(screen.getByText("Change role: User One")).toBeInTheDocument();
@@ -251,7 +254,7 @@ describe("UserRoleDialog", () => {
         onOpenChange={mockOnOpenChange}
         user={user2}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(screen.getByText("Change role: User Two")).toBeInTheDocument();

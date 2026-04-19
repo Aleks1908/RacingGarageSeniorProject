@@ -69,7 +69,7 @@ export const WorkOrderDetailsPage = () => {
 
   const canManage = useMemo(
     () => roles.includes("Manager") || roles.includes("Mechanic"),
-    [roles]
+    [roles],
   );
 
   const [data, setData] = useState<WorkOrderDetails | null>(null);
@@ -85,7 +85,7 @@ export const WorkOrderDetailsPage = () => {
 
   const mechanics = useMemo(
     () => users.filter((u) => u.isActive && u.roles.includes("Mechanic")),
-    [users]
+    [users],
   );
 
   const [editOpen, setEditOpen] = useState(false);
@@ -95,7 +95,7 @@ export const WorkOrderDetailsPage = () => {
   const [laborOpen, setLaborOpen] = useState(false);
   const [editingLabor, setEditingLabor] = useState<LaborLogRead | null>(null);
   const [forcedTaskId, setForcedTaskId] = useState<number | undefined>(
-    undefined
+    undefined,
   );
 
   const [partOpen, setPartOpen] = useState(false);
@@ -169,7 +169,7 @@ export const WorkOrderDetailsPage = () => {
       } catch (e) {
         if (cancelled) return;
         setDepsErr(
-          e instanceof Error ? e.message : "Failed to load edit data."
+          e instanceof Error ? e.message : "Failed to load edit data.",
         );
       } finally {
         if (!cancelled) setDepsLoading(false);
@@ -257,7 +257,7 @@ export const WorkOrderDetailsPage = () => {
       await loadDetails();
     } catch (e) {
       alert(
-        e instanceof Error ? e.message : "Failed to delete part installation"
+        e instanceof Error ? e.message : "Failed to delete part installation",
       );
     } finally {
       setDeleting(null);
@@ -746,7 +746,7 @@ export const WorkOrderDetailsPage = () => {
             mechanics={mechanics}
             currentUserId={user.userId}
             onSaved={loadDetails}
-            editingLinkedIssueId={data.linkedIssueId ?? null}
+            editingLinkedIssueId={data.linkedIssue?.id ?? null}
             editingLinkedIssue={data.linkedIssue ?? null}
           />
         )}

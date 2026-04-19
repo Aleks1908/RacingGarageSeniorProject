@@ -23,6 +23,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -61,9 +67,12 @@ export const IssueReportsPage = () => {
   const roles = useMemo(() => user?.roles ?? [], [user?.roles]);
   const canCreate = useMemo(
     () => roles.includes("Driver") || roles.includes("Manager"),
-    [roles]
+    [roles],
   );
-  const canEdit = useMemo(() => roles.includes("Manager"), [roles]);
+  const canEdit = useMemo(
+    () => roles.includes("Manager") || roles.includes("Driver"),
+    [roles],
+  );
 
   const [items, setItems] = useState<IssueReportRead[]>([]);
   const [cars, setCars] = useState<TeamCarRead[]>([]);
@@ -270,9 +279,22 @@ export const IssueReportsPage = () => {
 
                   <TableCell>
                     <div className="font-medium">{i.title}</div>
-                    <div className="text-xs text-muted-foreground line-clamp-1">
-                      {i.description || "—"}
-                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="text-xs text-muted-foreground cursor-help max-w-xs overflow-hidden text-ellipsis whitespace-nowrap">
+                            {i.description || "—"}
+                          </div>
+                        </TooltipTrigger>
+                        {i.description && (
+                          <TooltipContent className="max-w-2xl">
+                            <p className="whitespace-pre-wrap break-words">
+                              {i.description}
+                            </p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                     <div className="text-xs text-muted-foreground mt-1">
                       by {i.reportedByName}
                     </div>
@@ -308,7 +330,11 @@ export const IssueReportsPage = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={!canEdit}
+                        disabled={
+                          !canEdit ||
+                          (!roles.includes("Manager") &&
+                            i.reportedByUserId !== user?.userId)
+                        }
                         onClick={() => openEdit(i)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -317,7 +343,11 @@ export const IssueReportsPage = () => {
                       <Button
                         variant="destructive"
                         size="sm"
-                        disabled={!canEdit}
+                        disabled={
+                          !canEdit ||
+                          (!roles.includes("Manager") &&
+                            i.reportedByUserId !== user?.userId)
+                        }
                         onClick={() => onDelete(i)}
                       >
                         <Trash2 className="h-4 w-4" />

@@ -5,9 +5,7 @@ import DashboardPage from "./pages/DashboardPage/DashboardPage";
 import RequireRole from "./auth/RequireRole";
 import { IssueReportsPage } from "./pages/IssueReportsPage/IssueReportsPage";
 import { InventoryPage } from "./pages/InventoryPage/InventoryPage";
-import { ReorderPage } from "./pages/ReorderPage/ReorderPage";
 import { PartsPage } from "./pages/PartsPage/PartsPage";
-import { PartInstallationsPage } from "./pages/PartInstallationsPage/PartInstallationsPage";
 import { UsersPage } from "./pages/UsersPage/UsersPage";
 import TeamCarsPage from "./pages/TeamCarsPage/TeamCarsPage";
 import TeamCarPage from "./pages/TeamCarPage/TeamCarPage";
@@ -90,14 +88,6 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="/inventory/reorder"
-        element={
-          <RequireRole allow={["Manager", "PartsClerk"]}>
-            <ReorderPage />
-          </RequireRole>
-        }
-      />
-      <Route
         path="/suppliers"
         element={
           <RequireRole allow={["Manager", "PartsClerk"]}>
@@ -121,15 +111,6 @@ export default function AppRoutes() {
           </RequireRole>
         }
       />
-      <Route
-        path="/part-installations"
-        element={
-          <RequireRole allow={["Manager", "Mechanic", "PartsClerk"]}>
-            <PartInstallationsPage />
-          </RequireRole>
-        }
-      />
-
       <Route
         path="/users"
         element={

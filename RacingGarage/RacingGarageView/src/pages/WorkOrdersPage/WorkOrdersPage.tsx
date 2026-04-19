@@ -75,7 +75,7 @@ export default function WorkOrdersPage() {
 
   const mechanics = useMemo(
     () => users.filter((u) => u.isActive && u.roles.includes("Mechanic")),
-    [users]
+    [users],
   );
 
   function fmtDateTime(v?: string | null) {
@@ -263,7 +263,6 @@ export default function WorkOrdersPage() {
                 <TableHead>Car</TableHead>
                 <TableHead>Priority</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Linked</TableHead>
                 <TableHead>Assigned</TableHead>
                 <TableHead className="text-right">Created</TableHead>
                 <TableHead className="text-right w-37.5">Actions</TableHead>
@@ -274,7 +273,7 @@ export default function WorkOrdersPage() {
               {!loading && items.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={9}
+                    colSpan={8}
                     className="text-center text-muted-foreground py-10"
                   >
                     No work orders found.
@@ -305,14 +304,6 @@ export default function WorkOrdersPage() {
 
                   <TableCell>
                     <Badge variant="secondary">{w.status}</Badge>
-                  </TableCell>
-
-                  <TableCell className="text-sm">
-                    {w.linkedIssueId ? (
-                      <Badge variant="outline">Issue #{w.linkedIssueId}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
                   </TableCell>
 
                   <TableCell className="text-sm">

@@ -71,12 +71,6 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(w => w.CarSessionId)
             .OnDelete(DeleteBehavior.SetNull);
-        
-        modelBuilder.Entity<WorkOrder>()
-            .HasOne(w => w.LinkedIssue)
-            .WithMany()
-            .HasForeignKey(w => w.LinkedIssueId)
-            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<LaborLog>()
             .HasOne(l => l.MechanicUser)
@@ -98,8 +92,8 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<IssueReport>()
             .HasOne(i => i.LinkedWorkOrder)
-            .WithMany()
-            .HasForeignKey(i => i.LinkedWorkOrderId)
+            .WithOne(w => w.LinkedIssue)
+            .HasForeignKey<IssueReport>(i => i.LinkedWorkOrderId)
             .OnDelete(DeleteBehavior.SetNull);
         
         modelBuilder.Entity<Supplier>()

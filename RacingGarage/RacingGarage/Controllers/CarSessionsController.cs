@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RacingGarage.Data;
-using RacingGarage.dto;
+using RacingGarage.Dto;
 using RacingGarage.Models;
 
 namespace RacingGarage.Controllers;
@@ -35,7 +35,9 @@ public class CarSessionsController : ControllerBase
                 Date = s.Date,
                 TrackName = s.TrackName,
                 DriverUserId = s.DriverUserId,
-                DriverName = s.DriverUser != null ? s.DriverUser.Name : null,
+                DriverName = s.DriverUser == null
+                    ? null
+                    : (s.DriverUser.FirstName + " " + s.DriverUser.LastName).Trim(),
                 Laps = s.Laps,
                 Notes = s.Notes
             })
@@ -60,7 +62,9 @@ public class CarSessionsController : ControllerBase
                 Date = s.Date,
                 TrackName = s.TrackName,
                 DriverUserId = s.DriverUserId,
-                DriverName = s.DriverUser != null ? s.DriverUser.Name : null,
+                DriverName = s.DriverUser == null
+                    ? null
+                    : (s.DriverUser.FirstName + " " + s.DriverUser.LastName).Trim(),
                 Laps = s.Laps,
                 Notes = s.Notes
             })
@@ -114,7 +118,9 @@ public class CarSessionsController : ControllerBase
                 Date = s.Date,
                 TrackName = s.TrackName,
                 DriverUserId = s.DriverUserId,
-                DriverName = s.DriverUser != null ? s.DriverUser.Name : null,
+                DriverName = s.DriverUser == null
+                    ? null
+                    : (s.DriverUser.FirstName + " " + s.DriverUser.LastName).Trim(),
                 Laps = s.Laps,
                 Notes = s.Notes
             })

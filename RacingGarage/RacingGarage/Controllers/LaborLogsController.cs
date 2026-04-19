@@ -44,8 +44,9 @@ public class LaborLogsController : ControllerBase
                 Id = l.Id,
                 WorkOrderTaskId = l.WorkOrderTaskId,
                 MechanicUserId = l.MechanicUserId,
-                MechanicName = l.MechanicUser.Name,
-                Minutes = l.Minutes,
+                MechanicName = l.MechanicUser != null
+                    ? ((l.MechanicUser.FirstName + " " + l.MechanicUser.LastName).Trim())
+                    : null,                Minutes = l.Minutes,
                 LogDate = l.LogDate,
                 Comment = l.Comment
             })
@@ -66,8 +67,9 @@ public class LaborLogsController : ControllerBase
                 Id = l.Id,
                 WorkOrderTaskId = l.WorkOrderTaskId,
                 MechanicUserId = l.MechanicUserId,
-                MechanicName = l.MechanicUser.Name,
-                Minutes = l.Minutes,
+                MechanicName = l.MechanicUser != null
+                    ? ((l.MechanicUser.FirstName + " " + l.MechanicUser.LastName).Trim())
+                    : null,                Minutes = l.Minutes,
                 LogDate = l.LogDate,
                 Comment = l.Comment
             })
@@ -111,8 +113,9 @@ public class LaborLogsController : ControllerBase
                 Id = l.Id,
                 WorkOrderTaskId = l.WorkOrderTaskId,
                 MechanicUserId = l.MechanicUserId,
-                MechanicName = l.MechanicUser.Name,
-                Minutes = l.Minutes,
+                MechanicName = l.MechanicUser != null
+                    ? ((l.MechanicUser.FirstName + " " + l.MechanicUser.LastName).Trim())
+                    : null,                Minutes = l.Minutes,
                 LogDate = l.LogDate,
                 Comment = l.Comment
             })

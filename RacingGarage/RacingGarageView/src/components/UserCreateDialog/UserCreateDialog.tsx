@@ -30,7 +30,8 @@ import {
 } from "@/components/ui/select";
 
 type FormValues = {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   role: string;
@@ -42,14 +43,15 @@ type Props = {
   onSaved: () => Promise<void> | void;
 };
 
-const ROLE_OPTIONS = ["Manager", "Mechanic", "PartsClerk"] as const;
+const ROLE_OPTIONS = ["Manager", "Mechanic", "PartsClerk", "Driver"] as const;
 
 export function UserCreateDialog({ open, onOpenChange, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
 
   const form = useForm<FormValues>({
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       role: "Mechanic",
@@ -59,7 +61,8 @@ export function UserCreateDialog({ open, onOpenChange, onSaved }: Props) {
   useEffect(() => {
     if (!open) return;
     form.reset({
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       role: "Mechanic",
@@ -70,11 +73,16 @@ export function UserCreateDialog({ open, onOpenChange, onSaved }: Props) {
   const title = useMemo(() => "Create user", []);
 
   async function onSubmit(v: FormValues) {
-    const name = v.name.trim();
+    const firstName = v.firstName.trim();
+    const lastName = v.lastName.trim();
     const email = v.email.trim();
 
-    if (!name) {
-      form.setError("name", { message: "Name is required." });
+    if (!firstName) {
+      form.setError("firstName", { message: "First name is required." });
+      return;
+    }
+    if (!lastName) {
+      form.setError("lastName", { message: "Last name is required." });
       return;
     }
     if (!email) {
@@ -95,7 +103,8 @@ export function UserCreateDialog({ open, onOpenChange, onSaved }: Props) {
     }
 
     const dto: UserCreate = {
-      name,
+      firstName,
+      lastName,
       email,
       password: v.password,
       role: v.role,
@@ -125,15 +134,34 @@ export function UserCreateDialog({ open, onOpenChange, onSaved }: Props) {
             <div className="grid gap-3 sm:grid-cols-2">
               <FormField
                 control={form.control}
-                name="name"
-                rules={{ required: "Name is required." }}
+                name="firstName"
+                rules={{ required: "First name is required." }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>First Name</FormLabel>
                     <FormControl>
                       <Input
                         disabled={saving}
-                        placeholder="e.g. John Doe"
+                        placeholder="e.g. John"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="lastName"
+                rules={{ required: "Last name is required." }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        disabled={saving}
+                        placeholder="e.g. Doe"
                         {...field}
                       />
                     </FormControl>

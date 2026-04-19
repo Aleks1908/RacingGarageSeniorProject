@@ -37,7 +37,12 @@ public class CarSessionsApiTests : IClassFixture<TestAppFactory>
 
         var u = new AppUser
         {
-            Name = name ?? "Test User",
+            FirstName = string.IsNullOrWhiteSpace(name) ? "Test"
+                : name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries)[0],
+            LastName  = string.IsNullOrWhiteSpace(name) ? "User"
+                : (name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries).Length > 1
+                    ? name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries)[1]
+                    : "User"),
             Email = email ?? $"user{Guid.NewGuid():N}@test.local",
             PasswordHash = "x"
         };

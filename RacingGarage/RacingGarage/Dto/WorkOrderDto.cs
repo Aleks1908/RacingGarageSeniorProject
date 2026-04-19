@@ -24,7 +24,6 @@ public sealed class WorkOrderReadDto
     public DateTime CreatedAt { get; init; }
     public DateTime? DueDate { get; init; }
     public DateTime? ClosedAt { get; init; }
-    public int? LinkedIssueId { get; init; }
 }
 
 public sealed class WorkOrderCreateDto
@@ -61,6 +60,4 @@ public sealed class WorkOrderUpdateDto
 
     public DateTime? DueDate { get; init; }
     public DateTime? ClosedAt { get; init; }
-    
-    public int? LinkedIssueId { get; set; }
 }

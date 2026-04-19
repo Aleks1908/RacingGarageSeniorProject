@@ -27,7 +27,7 @@ export default function PageLayout({
         <div className="flex items-center justify-between gap-4 border-b px-6 py-4">
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">
-              Logged in as {user?.name}
+              Logged in as {user?.firstName} {user?.lastName}
             </p>
             <p className="text-xs text-muted-foreground truncate">
               {roles.join(", ")}

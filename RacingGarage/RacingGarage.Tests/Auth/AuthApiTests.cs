@@ -40,7 +40,8 @@ public class AuthApiTests : IClassFixture<TestAppFactory>
 
         var user = new AppUser
         {
-            Name = "Test User",
+            FirstName = "Test",
+            LastName = $"User",
             Email = email,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -153,7 +154,8 @@ public class AuthApiTests : IClassFixture<TestAppFactory>
 
         body!.UserId.Should().Be(seeded.userId);
         body.Email.Should().Be(seeded.email);
-        body.Name.Should().Be("Test User");
+        body.FirstName.Should().Be("Test");
+        body.LastName.Should().Be("User");
         body.AccessToken.Should().NotBeNullOrWhiteSpace();
         body.ExpiresAtUtc.Should().BeAfter(DateTime.UtcNow.AddHours(5));
         body.Roles.Should().NotBeNull();
@@ -181,7 +183,8 @@ public class AuthApiTests : IClassFixture<TestAppFactory>
         public string AccessToken { get; set; } = "";
         public DateTime ExpiresAtUtc { get; set; }
         public int UserId { get; set; }
-        public string Name { get; set; } = "";
+        public string FirstName { get; set; } = "";
+        public string LastName { get; set; } = "";
         public string Email { get; set; } = "";
         public List<string> Roles { get; set; } = new();
     }

@@ -37,10 +37,14 @@ namespace RacingGarage.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("longtext");
 
@@ -254,7 +258,8 @@ namespace RacingGarage.Migrations
 
                     b.HasIndex("CarSessionId");
 
-                    b.HasIndex("LinkedWorkOrderId");
+                    b.HasIndex("LinkedWorkOrderId")
+                        .IsUnique();
 
                     b.HasIndex("ReportedByUserId");
 
@@ -546,9 +551,6 @@ namespace RacingGarage.Migrations
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int?>("LinkedIssueId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -571,8 +573,6 @@ namespace RacingGarage.Migrations
                     b.HasIndex("CarSessionId");
 
                     b.HasIndex("CreatedByUserId");
-
-                    b.HasIndex("LinkedIssueId");
 
                     b.HasIndex("TeamCarId");
 
@@ -696,8 +696,8 @@ namespace RacingGarage.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("RacingGarage.Models.WorkOrder", "LinkedWorkOrder")
-                        .WithMany()
-                        .HasForeignKey("LinkedWorkOrderId")
+                        .WithOne("LinkedIssue")
+                        .HasForeignKey("RacingGarage.Models.IssueReport", "LinkedWorkOrderId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("RacingGarage.Models.AppUser", "ReportedByUser")
@@ -822,11 +822,6 @@ namespace RacingGarage.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("RacingGarage.Models.IssueReport", "LinkedIssue")
-                        .WithMany()
-                        .HasForeignKey("LinkedIssueId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("RacingGarage.Models.TeamCar", "TeamCar")
                         .WithMany()
                         .HasForeignKey("TeamCarId")
@@ -838,8 +833,6 @@ namespace RacingGarage.Migrations
                     b.Navigation("CarSession");
 
                     b.Navigation("CreatedByUser");
-
-                    b.Navigation("LinkedIssue");
 
                     b.Navigation("TeamCar");
                 });
@@ -872,6 +865,8 @@ namespace RacingGarage.Migrations
 
             modelBuilder.Entity("RacingGarage.Models.WorkOrder", b =>
                 {
+                    b.Navigation("LinkedIssue");
+
                     b.Navigation("Tasks");
                 });
 

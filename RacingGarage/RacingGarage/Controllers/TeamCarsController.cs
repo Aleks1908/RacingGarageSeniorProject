@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RacingGarage.Data;
 using RacingGarage.dto;
+using RacingGarage.Dto;
 using RacingGarage.Models;
 
 namespace RacingGarage.Controllers;
@@ -188,7 +189,7 @@ public class TeamCarsController : ControllerBase
                 TrackName = s.TrackName,
 
                 DriverUserId = s.DriverUserId,
-                DriverName = s.DriverUserId != null ? s.DriverUser!.Name : null,
+                DriverName = (s.DriverUser!.FirstName + " " + s.DriverUser!.LastName).Trim(),
 
                 Laps = s.Laps,
                 Notes = s.Notes
@@ -206,7 +207,7 @@ public class TeamCarsController : ControllerBase
                 TeamCarNumber = i.TeamCar.CarNumber,
                 CarSessionId = i.CarSessionId,
                 ReportedByUserId = i.ReportedByUserId,
-                ReportedByName = i.ReportedByUser.Name,
+                ReportedByName = (i.ReportedByUser.FirstName + " " + i.ReportedByUser.LastName).Trim(),
                 LinkedWorkOrderId = i.LinkedWorkOrderId,
                 Title = i.Title,
                 Description = i.Description,
@@ -219,6 +220,9 @@ public class TeamCarsController : ControllerBase
 
         var openWos = await _db.WorkOrders
             .AsNoTracking()
+            .Include(w => w.TeamCar)
+            .Include(w => w.CreatedByUser)
+            .Include(w => w.AssignedToUser)
             .Where(w => w.TeamCarId == id && w.Status != "Closed")
             .OrderByDescending(w => w.CreatedAt)
             .Select(w => new WorkOrderReadDto
@@ -227,9 +231,11 @@ public class TeamCarsController : ControllerBase
                 TeamCarId = w.TeamCarId,
                 TeamCarNumber = w.TeamCar.CarNumber,
                 CreatedByUserId = w.CreatedByUserId,
-                CreatedByName = w.CreatedByUser.Name,
+                CreatedByName = (w.CreatedByUser.FirstName + " " + w.CreatedByUser.LastName).Trim(),
                 AssignedToUserId = w.AssignedToUserId,
-                AssignedToName = w.AssignedToUser != null ? w.AssignedToUser.Name : null,
+                AssignedToName = w.AssignedToUser == null
+                    ? null
+                    : (w.AssignedToUser.FirstName + " " + w.AssignedToUser.LastName).Trim(),
                 CarSessionId = w.CarSessionId,
                 Title = w.Title,
                 Description = w.Description,
@@ -237,9 +243,7 @@ public class TeamCarsController : ControllerBase
                 Status = w.Status,
                 CreatedAt = w.CreatedAt,
                 DueDate = w.DueDate,
-                ClosedAt = w.ClosedAt,
-                LinkedIssueId = w.LinkedIssueId,
-
+                ClosedAt = w.ClosedAt
             })
             .ToListAsync();
 

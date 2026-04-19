@@ -250,9 +250,9 @@ export function WorkOrderUpsertDialog({
 
   async function applyIssueLink(
     workOrderId: number,
-    nextIssueId: number | null
+    nextIssueId: number | null,
   ) {
-    const prevIssueId = editing ? editLinkedId ?? null : null;
+    const prevIssueId = editing ? (editLinkedId ?? null) : null;
 
     if (editing && prevIssueId === nextIssueId) return;
 
@@ -333,10 +333,10 @@ export function WorkOrderUpsertDialog({
   const issuesPlaceholder = !teamCarIdNum
     ? "Select a car first"
     : issuesLoading
-    ? "Loading issues..."
-    : issuesForSelect.length === 0
-    ? "No open issues for this car"
-    : "No linked issue";
+      ? "Loading issues..."
+      : issuesForSelect.length === 0
+        ? "No open issues for this car"
+        : "No linked issue";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -484,7 +484,7 @@ export function WorkOrderUpsertDialog({
                         <SelectItem value="none">Unassigned</SelectItem>
                         {mechanics.map((m) => (
                           <SelectItem key={m.id} value={String(m.id)}>
-                            {m.name} ({m.email})
+                            {m.firstName} {m.lastName} ({m.email})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -580,8 +580,8 @@ export function WorkOrderUpsertDialog({
                 {saving
                   ? "Saving..."
                   : editing
-                  ? "Save Changes"
-                  : "Create Work Order"}
+                    ? "Save Changes"
+                    : "Create Work Order"}
               </Button>
             </div>
           </form>

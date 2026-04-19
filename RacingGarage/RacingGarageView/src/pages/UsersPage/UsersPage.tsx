@@ -75,7 +75,8 @@ export const UsersPage = () => {
       .filter((u) => {
         if (!needle) return true;
         return (
-          u.name.toLowerCase().includes(needle) ||
+          u.firstName.toLowerCase().includes(needle) ||
+          u.lastName.toLowerCase().includes(needle) ||
           u.email.toLowerCase().includes(needle) ||
           (u.roles ?? []).some((r) => r.toLowerCase().includes(needle))
         );
@@ -83,7 +84,9 @@ export const UsersPage = () => {
       .sort((a, b) => {
         const ax = a.isActive ? 0 : 1;
         const bx = b.isActive ? 0 : 1;
-        return ax - bx || a.name.localeCompare(b.name);
+        const aName = `${a.firstName} ${a.lastName}`;
+        const bName = `${b.firstName} ${b.lastName}`;
+        return ax - bx || aName.localeCompare(bName);
       });
   }, [items, q]);
 
@@ -95,7 +98,7 @@ export const UsersPage = () => {
   async function onDeactivate(u: UserRead) {
     if (!canManageUsers) return;
 
-    const ok = confirm(`Deactivate ${u.name} (${u.email})?`);
+    const ok = confirm(`Deactivate ${u.firstName} ${u.lastName} (${u.email})?`);
     if (!ok) return;
 
     try {
@@ -193,7 +196,9 @@ export const UsersPage = () => {
 
               {filtered.map((u) => (
                 <TableRow key={u.id}>
-                  <TableCell className="font-medium">{u.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {u.firstName} {u.lastName}
+                  </TableCell>
                   <TableCell>{u.email}</TableCell>
 
                   <TableCell>
@@ -231,8 +236,8 @@ export const UsersPage = () => {
                           !u.isActive
                             ? "Already inactive"
                             : canManageUsers
-                            ? "Deactivate user"
-                            : "No permission"
+                              ? "Deactivate user"
+                              : "No permission"
                         }
                       >
                         <Trash2 className="h-4 w-4" />

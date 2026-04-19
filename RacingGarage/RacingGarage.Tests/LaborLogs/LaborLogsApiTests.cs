@@ -41,7 +41,8 @@ public class LaborLogsApiTests : IClassFixture<TestAppFactory>
 
         var user = new AppUser
         {
-            Name = name ?? $"User {roleName} {U("N")}",
+            FirstName = "User",
+            LastName = $"{roleName} {U("N")}",
             Email = $"{Guid.NewGuid():N}@test.local",
             PasswordHash = "hash",
             IsActive = true,
@@ -91,7 +92,6 @@ public class LaborLogsApiTests : IClassFixture<TestAppFactory>
             CreatedAt = DateTime.UtcNow,
             DueDate = null,
             ClosedAt = null,
-            LinkedIssueId = null
         };
 
         db.WorkOrders.Add(wo);

@@ -47,7 +47,8 @@ public class UsersApiTests : IClassFixture<TestAppFactory>
 
         var u = new AppUser
         {
-            Name = nm,
+            FirstName = (nm?.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()) ?? "Test",
+            LastName  = (nm?.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries).Skip(1).FirstOrDefault()) ?? "User",
             Email = email,
             IsActive = isActive,
             CreatedAt = DateTime.UtcNow
@@ -107,7 +108,8 @@ public class UsersApiTests : IClassFixture<TestAppFactory>
 
         var res = await client.PostAsJsonAsync("/api/users", new
         {
-            name = "New User",
+            firstName = "New",
+            lastName = "User",
             email = "new@test.local",
             password = "Pass123!",
             role = "Driver"
@@ -124,7 +126,8 @@ public class UsersApiTests : IClassFixture<TestAppFactory>
 
         var res = await client.PostAsJsonAsync("/api/users", new
         {
-            name = "New User",
+            firstName = "New",
+            lastName = "User",
             email = $"{Guid.NewGuid():N}@test.local",
             password = "Pass123!",
             role = "NotARealRole"
@@ -143,7 +146,8 @@ public class UsersApiTests : IClassFixture<TestAppFactory>
 
         var res = await client.PostAsJsonAsync("/api/users", new
         {
-            name = "Another",
+            firstName = "Another",
+            lastName = "User",
             email = existingEmail,
             password = "Pass123!",
             role = "Driver"
@@ -164,7 +168,8 @@ public class UsersApiTests : IClassFixture<TestAppFactory>
 
         var res = await client.PostAsJsonAsync("/api/users", new
         {
-            name = "Created User",
+            firstName = "Created",
+            lastName = "User",
             email,
             password = "Pass123!",
             role = "Driver"
@@ -295,7 +300,8 @@ public class UsersApiTests : IClassFixture<TestAppFactory>
 
         var res = await client.PutAsJsonAsync("/api/users/me", new
         {
-            name = "New Name",
+            firstName = "New",
+            lastName = "Name",
             email = $"{Guid.NewGuid():N}@test.local"
         });
 
@@ -312,7 +318,8 @@ public class UsersApiTests : IClassFixture<TestAppFactory>
         var res = await client.PutAsJsonAsync("/api/users/me", new
         {
             oldPassword = "WRONG",
-            name = "New Name",
+            firstName = "New",
+            lastName = "Name",
             email = $"{Guid.NewGuid():N}@test.local"
         });
 
@@ -330,7 +337,8 @@ public class UsersApiTests : IClassFixture<TestAppFactory>
         var res = await client.PutAsJsonAsync("/api/users/me", new
         {
             oldPassword = user.password,
-            name = "New Name",
+            firstName = "New",
+            lastName = "Name",
             email = other.email
         });
 
@@ -348,7 +356,8 @@ public class UsersApiTests : IClassFixture<TestAppFactory>
         var res = await client.PutAsJsonAsync("/api/users/me", new
         {
             oldPassword = user.password,
-            name = "Updated Name",
+            firstName = "Updated",
+            lastName = "Name",
             email = newEmail
         });
 
@@ -363,7 +372,8 @@ public class UsersApiTests : IClassFixture<TestAppFactory>
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var u = await db.Users.FirstAsync(x => x.Id == user.userId);
-        u.Name.Should().Be("Updated Name");
+        u.FirstName.Should().Be("Updated");
+        u.LastName.Should().Be("Name");
         u.Email.Should().Be(newEmail);
     }
 

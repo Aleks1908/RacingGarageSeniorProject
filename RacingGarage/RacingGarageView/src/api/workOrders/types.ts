@@ -43,6 +43,5 @@ export type WorkOrderDetails = {
   partInstallations: PartInstallationRead[];
   totalLaborMinutes: number;
   totalInstalledPartsQty: number;
-  linkedIssueId: number | null;
   linkedIssue: IssueReportRead | null;
 };

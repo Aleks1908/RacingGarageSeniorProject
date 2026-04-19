@@ -41,7 +41,8 @@ public class WorkOrderTasksApiTests : IClassFixture<TestAppFactory>
 
         var user = new AppUser
         {
-            Name = name ?? $"{roleName} {U("U")}",
+            FirstName = "User",
+            LastName = $"{roleName} {U("N")}",
             Email = $"{Guid.NewGuid():N}@test.local",
             PasswordHash = "hash",
             IsActive = true,
@@ -98,7 +99,6 @@ public class WorkOrderTasksApiTests : IClassFixture<TestAppFactory>
             CreatedAt = DateTime.UtcNow,
             DueDate = null,
             ClosedAt = null,
-            LinkedIssueId = null
         };
 
         db.WorkOrders.Add(wo);

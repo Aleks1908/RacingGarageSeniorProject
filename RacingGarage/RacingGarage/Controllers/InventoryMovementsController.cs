@@ -43,7 +43,9 @@ public class InventoryMovementsController : ControllerBase
                 Reason = m.Reason,
                 WorkOrderId = m.WorkOrderId,
                 PerformedByUserId = m.PerformedByUserId,
-                PerformedByName = m.PerformedByUser != null ? m.PerformedByUser.Name : null,
+                PerformedByName = m.PerformedByUser != null
+                    ? ((m.PerformedByUser.FirstName + " " + m.PerformedByUser.LastName).Trim())
+                    : null,
                 PerformedAt = m.PerformedAt,
                 Notes = m.Notes
             })

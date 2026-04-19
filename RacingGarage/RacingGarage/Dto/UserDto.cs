@@ -3,7 +3,8 @@ namespace RacingGarage.dto;
 public sealed class UserReadDto
 {
     public int Id { get; init; }
-    public string Name { get; init; } = "";
+    public string FirstName { get; set; } = null!;
+    public string LastName { get; set; } = null!;
     public string Email { get; init; } = "";
     public bool IsActive { get; init; }
     public DateTime CreatedAt { get; init; }
@@ -13,7 +14,8 @@ public sealed class UserReadDto
 
 public sealed class UserCreateDto
 {
-    public string Name { get; init; } = "";
+    public string FirstName { get; set; } = null!;
+    public string LastName { get; set; } = null!;
     public string Email { get; init; } = "";
     public string Password { get; init; } = "";
     public string Role { get; init; } = "";

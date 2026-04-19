@@ -7,7 +7,8 @@ export type LoginResponse = {
   accessToken: string;
   expiresAtUtc: string;
   userId: number;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   roles: string[];
 };

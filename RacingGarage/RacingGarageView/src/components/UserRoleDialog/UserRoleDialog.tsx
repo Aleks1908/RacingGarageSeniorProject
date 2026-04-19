@@ -55,7 +55,7 @@ export function UserRoleDialog({ open, onOpenChange, user, onSaved }: Props) {
 
   const title = useMemo(() => {
     if (!user) return "Change role";
-    return `Change role: ${user.name}`;
+    return `Change role: ${user.firstName} ${user.lastName}`;
   }, [user]);
 
   async function onSubmit(v: FormValues) {

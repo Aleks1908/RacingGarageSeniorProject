@@ -44,7 +44,8 @@ public class InventoryMovementsApiTests : IClassFixture<TestAppFactory>
 
         var u = new AppUser
         {
-            Name = name ?? $"User {_seq}",
+            FirstName = name ?? $"User{_seq}",
+            LastName  = "Test",
             Email = email ?? $"u{Interlocked.Increment(ref _seq)}@test.local",
             PasswordHash = "x"
         };
@@ -235,7 +236,7 @@ public class InventoryMovementsApiTests : IClassFixture<TestAppFactory>
         ours[0].PartSku.Should().NotBeNullOrWhiteSpace();
         ours[0].PartName.Should().NotBeNullOrWhiteSpace();
         ours[0].LocationCode.Should().NotBeNullOrWhiteSpace();
-        ours[0].PerformedByName.Should().Be("Alice");
+        ours[0].PerformedByName.Should().Be("Alice Test");
     }
 
     [Fact]

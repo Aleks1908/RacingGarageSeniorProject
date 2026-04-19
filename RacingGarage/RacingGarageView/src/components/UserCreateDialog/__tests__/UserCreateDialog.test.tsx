@@ -18,7 +18,8 @@ describe("UserCreateDialog", () => {
     jest.clearAllMocks();
     mockCreateUser.mockResolvedValue({
       id: 1,
-      name: "New User",
+      firstName: "New",
+      lastName: "User",
       email: "new@example.com",
       isActive: true,
       roles: ["Mechanic"],
@@ -32,13 +33,14 @@ describe("UserCreateDialog", () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(
-      screen.getByRole("heading", { name: "Create user" })
+      screen.getByRole("heading", { name: "Create user" }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(screen.getByText("Role")).toBeInTheDocument();
@@ -50,7 +52,7 @@ describe("UserCreateDialog", () => {
         open={false}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(screen.queryByText("Create user")).not.toBeInTheDocument();
@@ -62,14 +64,15 @@ describe("UserCreateDialog", () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     const submitButton = screen.getByRole("button", { name: /create user/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText("Name is required.")).toBeInTheDocument();
+      expect(screen.getByText("First name is required.")).toBeInTheDocument();
+      expect(screen.getByText("Last name is required.")).toBeInTheDocument();
     });
   });
 
@@ -81,13 +84,15 @@ describe("UserCreateDialog", () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    const nameInput = screen.getByLabelText(/name/i);
+    const firstNameInput = screen.getByLabelText(/first name/i);
+    const lastNameInput = screen.getByLabelText(/last name/i);
     const emailInput = screen.getByLabelText(/email/i);
 
-    await user.type(nameInput, "John Doe");
+    await user.type(firstNameInput, "John");
+    await user.type(lastNameInput, "Doe");
     await user.type(emailInput, "invalid-email");
 
     const submitButton = screen.getByRole("button", { name: /create user/i });
@@ -106,14 +111,16 @@ describe("UserCreateDialog", () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    const nameInput = screen.getByLabelText(/name/i);
+    const firstNameInput = screen.getByLabelText(/first name/i);
+    const lastNameInput = screen.getByLabelText(/last name/i);
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/password/i);
 
-    await user.type(nameInput, "John Doe");
+    await user.type(firstNameInput, "John");
+    await user.type(lastNameInput, "Doe");
     await user.type(emailInput, "john@example.com");
     await user.type(passwordInput, "12345");
 
@@ -122,7 +129,7 @@ describe("UserCreateDialog", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Password must be 6+ chars.")
+        screen.getByText("Password must be 6+ chars."),
       ).toBeInTheDocument();
     });
   });
@@ -135,14 +142,16 @@ describe("UserCreateDialog", () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    const nameInput = screen.getByLabelText(/name/i);
+    const firstNameInput = screen.getByLabelText(/first name/i);
+    const lastNameInput = screen.getByLabelText(/last name/i);
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/password/i);
 
-    await user.type(nameInput, "John Doe");
+    await user.type(firstNameInput, "John");
+    await user.type(lastNameInput, "Doe");
     await user.type(emailInput, "john@example.com");
     await user.type(passwordInput, "password123");
 
@@ -151,7 +160,8 @@ describe("UserCreateDialog", () => {
 
     await waitFor(() => {
       expect(mockCreateUser).toHaveBeenCalledWith({
-        name: "John Doe",
+        firstName: "John",
+        lastName: "Doe",
         email: "john@example.com",
         password: "password123",
         role: "Mechanic",
@@ -173,14 +183,16 @@ describe("UserCreateDialog", () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    const nameInput = screen.getByLabelText(/name/i);
+    const firstNameInput = screen.getByLabelText(/first name/i);
+    const lastNameInput = screen.getByLabelText(/last name/i);
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/password/i);
 
-    await user.type(nameInput, "John Doe");
+    await user.type(firstNameInput, "John");
+    await user.type(lastNameInput, "Doe");
     await user.type(emailInput, "john@example.com");
     await user.type(passwordInput, "password123");
 
@@ -203,20 +215,22 @@ describe("UserCreateDialog", () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    const nameInput = screen.getByLabelText(/name/i) as HTMLInputElement;
-    await user.type(nameInput, "Test Name");
+    const firstNameInput = screen.getByLabelText(
+      /first name/i,
+    ) as HTMLInputElement;
+    await user.type(firstNameInput, "Test Name");
 
-    expect(nameInput.value).toBe("Test Name");
+    expect(firstNameInput.value).toBe("Test Name");
 
     rerender(
       <UserCreateDialog
         open={false}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     rerender(
@@ -224,11 +238,13 @@ describe("UserCreateDialog", () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    const newNameInput = screen.getByLabelText(/name/i) as HTMLInputElement;
-    expect(newNameInput.value).toBe("");
+    const newFirstNameInput = screen.getByLabelText(
+      /first name/i,
+    ) as HTMLInputElement;
+    expect(newFirstNameInput.value).toBe("");
   });
 
   it("should close dialog when Cancel button is clicked", () => {
@@ -237,7 +253,7 @@ describe("UserCreateDialog", () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     const cancelButton = screen.getByRole("button", { name: /cancel/i });
@@ -249,7 +265,7 @@ describe("UserCreateDialog", () => {
   it("should disable form during submission", async () => {
     const user = userEvent.setup();
     mockCreateUser.mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100))
+      () => new Promise((resolve) => setTimeout(resolve, 100)),
     );
 
     render(
@@ -257,14 +273,16 @@ describe("UserCreateDialog", () => {
         open={true}
         onOpenChange={mockOnOpenChange}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    const nameInput = screen.getByLabelText(/name/i);
+    const firstNameInput = screen.getByLabelText(/first name/i);
+    const lastNameInput = screen.getByLabelText(/last name/i);
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/password/i);
 
-    await user.type(nameInput, "John Doe");
+    await user.type(firstNameInput, "John");
+    await user.type(lastNameInput, "Doe");
     await user.type(emailInput, "john@example.com");
     await user.type(passwordInput, "password123");
 

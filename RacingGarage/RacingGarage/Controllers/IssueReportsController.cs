@@ -46,17 +46,9 @@ public class IssueReportsController : ControllerBase
 
         if (workOrderId is null)
         {
-            if (issue.LinkedWorkOrderId.HasValue)
-            {
-                var prevWo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == issue.LinkedWorkOrderId.Value);
-                if (prevWo != null && prevWo.LinkedIssueId == issue.Id)
-                    prevWo.LinkedIssueId = null;
-            }
-
             issue.LinkedWorkOrderId = null;
             issue.Status = ISSUE_STATUS_OPEN;
             issue.ClosedAt = null;
-
             return;
         }
 
@@ -66,13 +58,6 @@ public class IssueReportsController : ControllerBase
         
         if (wo.TeamCarId != issue.TeamCarId)
             throw new InvalidOperationException("Cannot link Issue and Work Order from different cars.");
-
-        if (issue.LinkedWorkOrderId.HasValue && issue.LinkedWorkOrderId.Value != wo.Id)
-        {
-            var prevWo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == issue.LinkedWorkOrderId.Value);
-            if (prevWo != null && prevWo.LinkedIssueId == issue.Id)
-                prevWo.LinkedIssueId = null;
-        }
 
         var otherIssues = await _db.IssueReports
             .Where(x => x.LinkedWorkOrderId == wo.Id && x.Id != issue.Id)
@@ -84,30 +69,17 @@ public class IssueReportsController : ControllerBase
             other.Status = ISSUE_STATUS_OPEN;
             other.ClosedAt = null;
         }
-
-        if (wo.LinkedIssueId.HasValue && wo.LinkedIssueId.Value != issue.Id)
-        {
-            var prevIssue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == wo.LinkedIssueId.Value);
-            if (prevIssue != null && prevIssue.LinkedWorkOrderId == wo.Id)
-            {
-                prevIssue.LinkedWorkOrderId = null;
-                prevIssue.Status = ISSUE_STATUS_OPEN;
-                prevIssue.ClosedAt = null;
-            }
-        }
-
+        
         issue.LinkedWorkOrderId = wo.Id;
-        wo.LinkedIssueId = issue.Id;
-
+        
         if (WoIsClosed(wo.Status))
         {
             issue.Status = ISSUE_STATUS_CLOSED;
-            issue.ClosedAt ??= DateTime.UtcNow;
+            issue.ClosedAt = DateTime.UtcNow;
         }
         else
         {
             issue.Status = ISSUE_STATUS_LINKED;
-            issue.ClosedAt = null;
         }
     }
 
@@ -130,22 +102,10 @@ public class IssueReportsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(severity))
             q = q.Where(i => i.Severity == severity.Trim());
 
-        if (IsInRole("Driver") && !IsInRole("Manager"))
-        {
-            if (!TryGetCurrentUserId(out var currentUserId))
-                return Unauthorized("Invalid token (missing user id).");
+        
+        if (reportedByUserId.HasValue)
+            q = q.Where(i => i.ReportedByUserId == reportedByUserId.Value);
 
-            var targetReporter = reportedByUserId ?? currentUserId;
-            if (targetReporter != currentUserId)
-                return Forbid();
-
-            q = q.Where(i => i.ReportedByUserId == currentUserId);
-        }
-        else
-        {
-            if (reportedByUserId.HasValue)
-                q = q.Where(i => i.ReportedByUserId == reportedByUserId.Value);
-        }
 
         var list = await q
             .OrderByDescending(i => i.ReportedAt)
@@ -159,8 +119,9 @@ public class IssueReportsController : ControllerBase
                 CarSessionId = i.CarSessionId,
 
                 ReportedByUserId = i.ReportedByUserId,
-                ReportedByName = i.ReportedByUser.Name,
-
+                ReportedByName = i.ReportedByUser != null
+                    ? ((i.ReportedByUser.FirstName + " " + i.ReportedByUser.LastName).Trim())
+                    : null,
                 LinkedWorkOrderId = i.LinkedWorkOrderId,
 
                 Title = i.Title,
@@ -194,8 +155,9 @@ public class IssueReportsController : ControllerBase
                 CarSessionId = i.CarSessionId,
 
                 ReportedByUserId = i.ReportedByUserId,
-                ReportedByName = i.ReportedByUser.Name,
-
+                ReportedByName = i.ReportedByUser != null
+                    ? ((i.ReportedByUser.FirstName + " " + i.ReportedByUser.LastName).Trim())
+                    : null,
                 LinkedWorkOrderId = i.LinkedWorkOrderId,
 
                 Title = i.Title,
@@ -271,8 +233,9 @@ public class IssueReportsController : ControllerBase
                 TeamCarNumber = i.TeamCar.CarNumber,
                 CarSessionId = i.CarSessionId,
                 ReportedByUserId = i.ReportedByUserId,
-                ReportedByName = i.ReportedByUser.Name,
-                LinkedWorkOrderId = i.LinkedWorkOrderId,
+                ReportedByName = i.ReportedByUser != null
+                    ? ((i.ReportedByUser.FirstName + " " + i.ReportedByUser.LastName).Trim())
+                    : null,                LinkedWorkOrderId = i.LinkedWorkOrderId,
                 Title = i.Title,
                 Description = i.Description,
                 Severity = i.Severity,
@@ -339,12 +302,6 @@ public class IssueReportsController : ControllerBase
         var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == id);
         if (issue is null) return NotFound();
 
-        if (issue.LinkedWorkOrderId.HasValue)
-        {
-            var wo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == issue.LinkedWorkOrderId.Value);
-            if (wo != null && wo.LinkedIssueId == issue.Id)
-                wo.LinkedIssueId = null;
-        }
 
         _db.IssueReports.Remove(issue);
         await _db.SaveChangesAsync();

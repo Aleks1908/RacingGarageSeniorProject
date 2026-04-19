@@ -26,7 +26,8 @@ public class InventoryStockApiTests : IClassFixture<TestAppFactory>
 
         var u = new AppUser
         {
-            Name = name,
+            FirstName = (name?.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()) ?? "Test",
+            LastName  = (name?.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries).Skip(1).FirstOrDefault()) ?? "User",
             Email = $"{Guid.NewGuid():N}@test.local",
             PasswordHash = "hash",
             IsActive = true,

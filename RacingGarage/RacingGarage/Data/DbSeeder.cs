@@ -6,13 +6,6 @@ namespace RacingGarage.Data;
 
 public static class DbSeeder
 {
-    public static async Task SeedAllAsync(AppDbContext db)
-    {
-        await SeedRolesAsync(db);
-        await SeedTestUsersAsync(db);
-        await SeedDemoDataAsync(db);
-    }
-
     public static async Task SeedRolesAsync(AppDbContext db)
     {
         if (await db.Roles.AnyAsync())
@@ -40,16 +33,16 @@ public static class DbSeeder
 
         var roles = await db.Roles.ToDictionaryAsync(r => r.Name, r => r.Id);
 
-        var manager = new AppUser { Name = "Test Manager", Email = "manager@test.com", IsActive = true, CreatedAt = DateTime.UtcNow };
+        var manager = new AppUser { FirstName = "Test",LastName = "Manager", Email = "manager@test.com", IsActive = true, CreatedAt = DateTime.UtcNow };
         manager.PasswordHash = HashPassword(manager, "Manager123!");
 
-        var mechanic = new AppUser { Name = "Test Mechanic", Email = "mechanic@test.com", IsActive = true, CreatedAt = DateTime.UtcNow };
+        var mechanic = new AppUser {FirstName = "Test",LastName = "Mechanic", Email = "mechanic@test.com", IsActive = true, CreatedAt = DateTime.UtcNow };
         mechanic.PasswordHash = HashPassword(mechanic, "Mechanic123!");
 
-        var driver = new AppUser { Name = "Test Driver", Email = "driver@test.com", IsActive = true, CreatedAt = DateTime.UtcNow };
+        var driver = new AppUser { FirstName = "Test",LastName = "Driver", Email = "driver@test.com", IsActive = true, CreatedAt = DateTime.UtcNow };
         driver.PasswordHash = HashPassword(driver, "Driver123!");
 
-        var parts = new AppUser { Name = "Test Parts", Email = "parts@test.com", IsActive = true, CreatedAt = DateTime.UtcNow };
+        var parts = new AppUser { FirstName = "Test",LastName = "Parts", Email = "parts@test.com", IsActive = true, CreatedAt = DateTime.UtcNow };
         parts.PasswordHash = HashPassword(parts, "Parts123!");
 
         db.Users.AddRange(manager, mechanic, driver, parts);
@@ -227,7 +220,7 @@ public static class DbSeeder
             Title = "Slight vibration at speed",
             Description = "Noticeable at 140+ km/h. Could be wheel balance.",
             Severity = "Medium",
-            Status = "Reviewed",
+            Status = "Linked",
             ReportedAt = DateTime.UtcNow.AddDays(-3)
         };
 
