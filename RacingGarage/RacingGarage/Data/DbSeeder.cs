@@ -72,7 +72,7 @@ public static class DbSeeder
         var driver = await db.Users.FirstAsync(u => u.Email == "driver@test.com");
         var partsClerk = await db.Users.FirstAsync(u => u.Email == "parts@test.com");
         
-        // === SUPPLIERS ===
+        // SUPPLIERS
         var brembo = new Supplier
         {
             Name = "Brembo Motorsport",
@@ -114,7 +114,7 @@ public static class DbSeeder
         
         db.Suppliers.AddRange(brembo, omp, motul);
         
-        // === INVENTORY LOCATIONS ===
+        // INVENTORY LOCATIONS
         var mainGarage = new InventoryLocation
         {
             Name = "Main Garage",
@@ -331,7 +331,7 @@ public static class DbSeeder
             Model = "E36 M3",
             Year = 1996,
             CarClass = "Time Attack",
-            Status = "Active",
+            Status = "Service",   // open brake & maintenance work orders
             OdometerKm = 120000,
             CreatedAt = DateTime.UtcNow
         };
@@ -344,7 +344,7 @@ public static class DbSeeder
             Model = "Civic EK9",
             Year = 1999,
             CarClass = "Track Day",
-            Status = "Active",
+            Status = "Service",   // in-progress wheel balance work order
             OdometerKm = 180000,
             CreatedAt = DateTime.UtcNow
         };
@@ -370,16 +370,29 @@ public static class DbSeeder
             Model = "GT-R R35",
             Year = 2015,
             CarClass = "GT Class",
-            Status = "Active",
+            Status = "Service",
             OdometerKm = 45000,
             CreatedAt = DateTime.UtcNow.AddMonths(-6)
         };
 
-        db.TeamCars.AddRange(car1, car2, car3, car4);
+        var car5 = new TeamCar
+        {
+            CarNumber = "44",
+            Nickname = "Yellow Hornet",
+            Make = "Porsche",
+            Model = "718 Cayman GT4",
+            Year = 2022,
+            CarClass = "GT4",
+            Status = "Active",
+            OdometerKm = 18500,
+            CreatedAt = DateTime.UtcNow.AddMonths(-3)
+        };
+
+        db.TeamCars.AddRange(car1, car2, car3, car4, car5);
 
         await db.SaveChangesAsync(); 
 
-        // === CAR SESSIONS ===
+        // CAR SESSIONS
         var session1 = new CarSession
         {
             TeamCarId = car1.Id,
@@ -468,10 +481,32 @@ public static class DbSeeder
             Notes = "Clean race. Won the class!"
         };
 
-        db.CarSessions.AddRange(session1, session2, session3, session4, session5, session6, session7, session8);
+        var session9 = new CarSession
+        {
+            TeamCarId = car5.Id,
+            SessionType = "Practice",
+            Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-10)),
+            TrackName = "Autodromo di Monza",
+            DriverUserId = driver.Id,
+            Laps = 18,
+            Notes = "Shake-down after winter storage. Car felt great, no issues."
+        };
+
+        var session10 = new CarSession
+        {
+            TeamCarId = car5.Id,
+            SessionType = "Race",
+            Date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-3)),
+            TrackName = "Autodromo di Monza",
+            DriverUserId = driver.Id,
+            Laps = 30,
+            Notes = "Podium finish. Car fully reliable throughout, zero mechanical concerns."
+        };
+
+        db.CarSessions.AddRange(session1, session2, session3, session4, session5, session6, session7, session8, session9, session10);
         await db.SaveChangesAsync();
         
-        // === ISSUE REPORTS ===
+        // ISSUE REPORTS
         var issue1 = new IssueReport
         {
             TeamCarId = car1.Id,
@@ -547,7 +582,7 @@ public static class DbSeeder
         db.IssueReports.AddRange(issue1, issue2, issue3, issue4, issue5, issue6);
         await db.SaveChangesAsync();
         
-        // === WORK ORDERS ===
+        // WORK ORDERS
         var wo1 = new WorkOrder
         {
             TeamCarId = car1.Id,
@@ -634,7 +669,7 @@ public static class DbSeeder
         issue6.LinkedWorkOrderId = wo5.Id;
         issue6.Status = "Linked";
         
-        // === WORK ORDER TASKS ===
+        // WORK ORDER TASKS
         var t1 = new WorkOrderTask
         {
             WorkOrderId = wo1.Id,
@@ -758,7 +793,7 @@ public static class DbSeeder
         db.WorkOrderTasks.AddRange(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
         await db.SaveChangesAsync();
 
-        // === LABOR LOGS ===
+        // LABOR LOGS
         var labor1 = new LaborLog
         {
             WorkOrderTaskId = t1.Id,
@@ -798,7 +833,7 @@ public static class DbSeeder
         db.LaborLogs.AddRange(labor1, labor2, labor3, labor4);
         await db.SaveChangesAsync();
         
-        // === INVENTORY STOCK & MOVEMENTS ===
+        // INVENTORY STOCK & MOVEMENTS
         await using var tx = await db.Database.BeginTransactionAsync();
         
         // Initial stock - Main Garage
