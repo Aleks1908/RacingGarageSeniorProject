@@ -15,9 +15,17 @@ namespace RacingGarage.Migrations
                 name: "FK_IssueReports_WorkOrders_LinkedWorkOrderId",
                 table: "IssueReports");
 
+            migrationBuilder.DropForeignKey(
+                name: "FK_WorkOrders_IssueReports_LinkedIssueId",
+                table: "WorkOrders");
+
             migrationBuilder.DropIndex(
                 name: "IX_IssueReports_LinkedWorkOrderId",
                 table: "IssueReports");
+
+            migrationBuilder.DropIndex(
+                name: "IX_WorkOrders_LinkedIssueId",
+                table: "WorkOrders");
 
             migrationBuilder.DropColumn(
                 name: "LinkedIssueId",
@@ -56,9 +64,22 @@ namespace RacingGarage.Migrations
                 nullable: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_WorkOrders_LinkedIssueId",
+                table: "WorkOrders",
+                column: "LinkedIssueId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_IssueReports_LinkedWorkOrderId",
                 table: "IssueReports",
                 column: "LinkedWorkOrderId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_WorkOrders_IssueReports_LinkedIssueId",
+                table: "WorkOrders",
+                column: "LinkedIssueId",
+                principalTable: "IssueReports",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.SetNull);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_IssueReports_WorkOrders_LinkedWorkOrderId",

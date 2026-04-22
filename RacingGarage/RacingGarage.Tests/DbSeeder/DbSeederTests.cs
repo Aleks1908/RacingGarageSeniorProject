@@ -137,7 +137,7 @@ public class DbSeederTests : IClassFixture<TestAppFactory>
         trackBox.IsActive.Should().BeTrue();
 
         var car1 = await db.TeamCars.AsNoTracking().SingleAsync(c => c.CarNumber == "27");
-        var wo1 = await db.WorkOrders.AsNoTracking().SingleAsync(w => w.TeamCarId == car1.Id && w.Title == "Brake system inspection");
+        var wo1 = await db.WorkOrders.AsNoTracking().SingleAsync(w => w.TeamCarId == car1.Id && w.Title == "Brake system inspection and overhaul");
 
         var issue1 = await db.IssueReports.AsNoTracking().SingleAsync(i => i.TeamCarId == car1.Id && i.Title == "Brake pedal feels soft");
         issue1.LinkedWorkOrderId.Should().Be(wo1.Id);

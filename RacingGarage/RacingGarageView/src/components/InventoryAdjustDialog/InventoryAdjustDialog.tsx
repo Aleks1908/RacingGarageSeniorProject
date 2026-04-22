@@ -353,7 +353,7 @@ export function InventoryAdjustDialog({
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Quantity change</FormLabel>
+                        <FormLabel>Quantity change <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -454,7 +454,7 @@ export function InventoryAdjustDialog({
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Part</FormLabel>
+                        <FormLabel>Part <span className="text-destructive">*</span></FormLabel>
 
                         {lockedPart ? (
                           <>
@@ -510,7 +510,7 @@ export function InventoryAdjustDialog({
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Location</FormLabel>
+                        <FormLabel>Location <span className="text-destructive">*</span></FormLabel>
 
                         {lockedLocation ? (
                           <>
@@ -568,7 +568,7 @@ export function InventoryAdjustDialog({
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Quantity</FormLabel>
+                        <FormLabel>Quantity <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
                           <Input
                             type="number"

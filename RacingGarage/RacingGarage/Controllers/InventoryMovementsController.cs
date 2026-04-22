@@ -14,6 +14,7 @@ public class InventoryMovementsController : ControllerBase
     public InventoryMovementsController(AppDbContext db) => _db = db;
 
     // GET /api/inventory-movements?partId=1&locationId=2&workOrderId=3
+    // Read-only audit trail; all writes are performed internally by InventoryStock and PartInstallations endpoints
     [HttpGet]
     public async Task<ActionResult<List<InventoryMovementReadDto>>> GetAll(
         [FromQuery] int? partId,

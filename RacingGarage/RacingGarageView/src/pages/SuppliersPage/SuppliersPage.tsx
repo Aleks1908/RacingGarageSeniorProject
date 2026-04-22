@@ -30,12 +30,7 @@ import {
   Truck,
 } from "lucide-react";
 import { SupplierUpsertDialog } from "@/components/SupplierUpsertDialog/SupplierUpsertDialog";
-
-function fmtDateTime(v?: string | null) {
-  if (!v) return "—";
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? v : d.toLocaleString();
-}
+import { fmtDateTime } from "@/lib/utils";
 
 function fmtAddress(s: SupplierRead) {
   const line1 = (s.addressLine1 ?? "").trim();

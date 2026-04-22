@@ -188,6 +188,26 @@ public class InventoryLocationsApiTests : IClassFixture<TestAppFactory>
     }
 
     [Fact]
+    public async Task Create_valid_can_create_inactive_location()
+    {
+        var client = _factory.CreateClient().AsUser(userId: 1, roles: "PartsClerk");
+
+        var res = await client.PostAsJsonAsync("/api/inventory-locations", new
+        {
+            name = "Archived Shelf",
+            code = "ARCH-1",
+            description = "",
+            isActive = false
+        });
+
+        res.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var created = await res.Content.ReadFromJsonAsync<InventoryLocationRead>();
+        created.Should().NotBeNull();
+        created!.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Update_requires_role()
     {
         var id = await SeedLocationAsync(name: "X", code: "X-1");

@@ -11,6 +11,7 @@ export type InventoryLocationCreate = {
   name: string;
   code: string;
   description?: string;
+  isActive?: boolean;
 };
 
 export type InventoryLocationUpdate = {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import PageLayout from "@/components/PageLayout/PageLayout";
 import { useAuth } from "@/auth/useAuth";
@@ -45,6 +45,8 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
+import { fmtDateTime } from "@/lib/utils";
+
 type Filters = {
   teamCarId: string;
   status: string;
@@ -54,14 +56,9 @@ type Filters = {
 const statuses = ["Open", "Linked", "Closed"] as const;
 const severities = ["Low", "Medium", "High"] as const;
 
-function fmtDateTime(v?: string | null) {
-  if (!v) return "—";
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? v : d.toLocaleString();
-}
-
 export const IssueReportsPage = () => {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
 
   const roles = useMemo(() => user?.roles ?? [], [user?.roles]);
@@ -80,7 +77,7 @@ export const IssueReportsPage = () => {
   const [err, setErr] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<Filters>({
-    teamCarId: "all",
+    teamCarId: searchParams.get("car") ?? "all",
     status: "all",
     severity: "all",
   });

@@ -16,6 +16,7 @@ public class TeamCarsController : ControllerBase
 
     public TeamCarsController(AppDbContext db) => _db = db;
 
+    // GET /api/team-cars
     [HttpGet]
     public async Task<ActionResult<List<TeamCarReadDto>>> GetAll()
     {
@@ -40,6 +41,7 @@ public class TeamCarsController : ControllerBase
         return Ok(cars);
     }
 
+    // GET /api/team-cars/{id}
     [HttpGet("{id:int}")]
     public async Task<ActionResult<TeamCarReadDto>> GetById(int id)
     {
@@ -65,6 +67,7 @@ public class TeamCarsController : ControllerBase
         return Ok(car);
     }
 
+    // POST /api/team-cars
     [Authorize(Roles = "Manager,Mechanic")]
     [HttpPost]
     public async Task<ActionResult<TeamCarReadDto>> Create([FromBody] TeamCarCreateDto dto)
@@ -108,6 +111,7 @@ public class TeamCarsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = car.Id }, readDto);
     }
 
+    // PUT /api/team-cars/{id}
     [Authorize(Roles = "Manager,Mechanic")]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] TeamCarUpdateDto dto)
@@ -137,6 +141,7 @@ public class TeamCarsController : ControllerBase
         return NoContent();
     }
 
+    // DELETE /api/team-cars/{id}
     [Authorize(Roles = "Manager,Mechanic")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
@@ -196,6 +201,7 @@ public class TeamCarsController : ControllerBase
             })
             .FirstOrDefaultAsync();
 
+        // Dashboard aggregates the latest session, all non-closed issues, and all non-closed work orders in three separate queries
         var openIssues = await _db.IssueReports
             .AsNoTracking()
             .Where(i => i.TeamCarId == id && i.Status != "Closed")

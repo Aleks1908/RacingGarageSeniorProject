@@ -344,7 +344,7 @@ export default function TeamCarPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => nav("/car-sessions")}
+                    onClick={() => nav(`/car-sessions?car=${carId}`)}
                   >
                     View all
                   </Button>
@@ -417,7 +417,7 @@ export default function TeamCarPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => nav("/issue-reports")}
+                    onClick={() => nav(`/issue-reports?car=${carId}`)}
                   >
                     View all
                   </Button>
@@ -507,7 +507,7 @@ export default function TeamCarPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => nav("/work-orders")}
+                    onClick={() => nav(`/work-orders?car=${carId}`)}
                   >
                     View all
                   </Button>

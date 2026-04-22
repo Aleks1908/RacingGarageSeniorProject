@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   Form,
   FormControl,
@@ -60,6 +60,7 @@ export function SupplierUpsertDialog({
   onSaved,
 }: Props) {
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -77,6 +78,8 @@ export function SupplierUpsertDialog({
 
   useEffect(() => {
     if (!open) return;
+
+    setFormError(null);
 
     if (editing) {
       form.reset({
@@ -104,41 +107,35 @@ export function SupplierUpsertDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editing?.id]);
 
+  function handleApiError(e: unknown) {
+    const msg = e instanceof Error ? e.message : "Save failed";
+
+    // Route well-known backend messages to the relevant field so they appear
+    // inline under the field rather than as a generic banner.
+    if (/name is required/i.test(msg) || /supplier with name/i.test(msg)) {
+      form.setError("name", { message: msg });
+    } else if (/email/i.test(msg)) {
+      form.setError("contactEmail", { message: msg });
+    } else if (/phone/i.test(msg)) {
+      form.setError("phone", { message: msg });
+    } else {
+      setFormError(msg);
+    }
+  }
+
   async function onSubmit(v: FormValues) {
     if (!canEdit) return;
 
-    const name = (v.name ?? "").trim();
-    if (!name) {
-      form.setError("name", { message: "Name is required." });
-      return;
-    }
-
-    const contactEmailRaw = (v.contactEmail ?? "").trim();
-    const phoneRaw = (v.phone ?? "").trim();
-
-    if (contactEmailRaw && !isValidEmail(contactEmailRaw)) {
-      form.setError("contactEmail", {
-        message: "Enter a valid email address.",
-      });
-      return;
-    }
-
-    if (phoneRaw && !isValidPhone(phoneRaw)) {
-      form.setError("phone", {
-        message:
-          "Enter a valid phone number (digits, spaces, +, -, parentheses).",
-      });
-      return;
-    }
+    setFormError(null);
 
     const base = {
-      name,
-      contactEmail: contactEmailRaw || null,
-      phone: phoneRaw || null,
-      addressLine1: (v.addressLine1 ?? "").trim() || null,
-      addressLine2: (v.addressLine2 ?? "").trim() || null,
-      city: (v.city ?? "").trim() || null,
-      country: (v.country ?? "").trim() || null,
+      name: v.name.trim(),
+      contactEmail: (v.contactEmail ?? "").trim(),
+      phone: (v.phone ?? "").trim(),
+      addressLine1: (v.addressLine1 ?? "").trim(),
+      addressLine2: (v.addressLine2 ?? "").trim(),
+      city: (v.city ?? "").trim(),
+      country: (v.country ?? "").trim(),
     };
 
     setSaving(true);
@@ -146,13 +143,13 @@ export function SupplierUpsertDialog({
       if (editing) {
         await updateSupplier(editing.id, { ...base, isActive: !!v.isActive });
       } else {
-        await createSupplier(base);
+        await createSupplier({ ...base, isActive: !!v.isActive });
       }
 
       onOpenChange(false);
       await onSaved();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Save failed");
+      handleApiError(e);
     } finally {
       setSaving(false);
     }
@@ -168,17 +165,32 @@ export function SupplierUpsertDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+          {/* noValidate disables browser-native field popups so react-hook-form
+              controls all validation feedback via FormMessage */}
+          <form
+            noValidate
+            className="space-y-4"
+            onSubmit={form.handleSubmit(onSubmit)}
+          >
             <div className="grid gap-3 sm:grid-cols-2">
               <FormField
                 control={form.control}
                 name="name"
-                rules={{ required: "Name is required" }}
+                rules={{
+                  validate: (v) =>
+                    !!(v ?? "").trim() || "Name is required",
+                }}
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>
+                      Name <span className="text-destructive">*</span>
+                    </FormLabel>
                     <FormControl>
-                      <Input disabled={!canEdit || saving} {...field} />
+                      <Input
+                        placeholder="e.g. Brembo S.p.A."
+                        disabled={!canEdit || saving}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -200,14 +212,15 @@ export function SupplierUpsertDialog({
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
-                        type="email"
                         autoComplete="email"
                         inputMode="email"
                         disabled={!canEdit || saving}
                         placeholder="Optional (e.g. sales@company.com)"
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        onBlur={(e) => field.onChange(e.target.value.trim())}
+                        {...field}
+                        onBlur={() => {
+                          field.onChange((field.value ?? "").trim());
+                          field.onBlur();
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -238,9 +251,11 @@ export function SupplierUpsertDialog({
                         inputMode="tel"
                         disabled={!canEdit || saving}
                         placeholder="Optional (e.g. +359 88 123 4567)"
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        onBlur={(e) => field.onChange(e.target.value.trim())}
+                        {...field}
+                        onBlur={() => {
+                          field.onChange((field.value ?? "").trim());
+                          field.onBlur();
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -258,8 +273,7 @@ export function SupplierUpsertDialog({
                       <Input
                         disabled={!canEdit || saving}
                         placeholder="Optional"
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value)}
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -277,8 +291,7 @@ export function SupplierUpsertDialog({
                       <Input
                         disabled={!canEdit || saving}
                         placeholder="Optional"
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value)}
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -296,8 +309,7 @@ export function SupplierUpsertDialog({
                       <Input
                         disabled={!canEdit || saving}
                         placeholder="Optional"
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value)}
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -315,8 +327,7 @@ export function SupplierUpsertDialog({
                       <Input
                         disabled={!canEdit || saving}
                         placeholder="Optional"
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value)}
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -324,30 +335,32 @@ export function SupplierUpsertDialog({
                 )}
               />
 
-              {editing && (
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-2 flex items-center gap-3 rounded-md border p-3">
-                      <FormControl>
-                        <Checkbox
-                          checked={!!field.value}
-                          onCheckedChange={(v) => field.onChange(Boolean(v))}
-                          disabled={!canEdit || saving}
-                        />
-                      </FormControl>
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium">Active</div>
-                        <div className="text-xs text-muted-foreground">
-                          Disable instead of deleting, for history preservation.
-                        </div>
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2 flex items-center justify-between rounded-md border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel>Active</FormLabel>
+                      <div className="text-xs text-muted-foreground">
+                        Disable instead of deleting, for history preservation.
                       </div>
-                    </FormItem>
-                  )}
-                />
-              )}
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={!!field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={!canEdit || saving}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </div>
+
+            {formError && (
+              <p className="text-sm font-medium text-destructive">{formError}</p>
+            )}
 
             <div className="flex justify-end gap-2 pt-2">
               <Button
@@ -365,7 +378,7 @@ export function SupplierUpsertDialog({
 
             {!canEdit && (
               <div className="text-xs text-muted-foreground">
-                You don’t have permission to manage suppliers.
+                You don't have permission to manage suppliers.
               </div>
             )}
           </form>

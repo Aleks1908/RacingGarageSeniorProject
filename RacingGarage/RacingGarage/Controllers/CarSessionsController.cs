@@ -15,11 +15,14 @@ public class CarSessionsController : ControllerBase
 
     public CarSessionsController(AppDbContext db) => _db = db;
 
+    // GET /api/car-sessions?teamCarId=1
     [HttpGet]
     public async Task<ActionResult<List<CarSessionReadDto>>> GetAll([FromQuery] int? teamCarId)
     {
         var q = _db.CarSessions.AsNoTracking();
 
+        // When teamCarId is supplied the query is scoped to that car
+        // otherwise all sessions are returned
         if (teamCarId.HasValue)
             q = q.Where(s => s.TeamCarId == teamCarId.Value);
 
@@ -95,6 +98,7 @@ public class CarSessionsController : ControllerBase
         var session = new CarSession
         {
             TeamCarId = dto.TeamCarId,
+            // Default to "Practice" when the caller omits SessionType
             SessionType = string.IsNullOrWhiteSpace(dto.SessionType) ? "Practice" : dto.SessionType.Trim(),
             Date = dto.Date,
             TrackName = dto.TrackName.Trim(),

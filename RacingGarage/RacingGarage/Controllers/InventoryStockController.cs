@@ -74,11 +74,13 @@ public class InventoryStockController : ControllerBase
         if (!int.TryParse(currentUserIdStr, out var currentUserId))
             return Unauthorized("Invalid token (missing user id).");
 
+        // Wrap stock update and movement creation in a transaction so they are never out of sync
         await using var tx = await _db.Database.BeginTransactionAsync();
 
         var stock = await _db.InventoryStock
             .FirstOrDefaultAsync(s => s.PartId == dto.PartId && s.InventoryLocationId == dto.InventoryLocationId);
 
+        // First-ever stock entry at this location is created on the fly for positive adjustments
         if (stock is null)
         {
             if (dto.QuantityChange < 0)
@@ -102,6 +104,7 @@ public class InventoryStockController : ControllerBase
         stock.Quantity = newQty;
         stock.UpdatedAt = DateTime.UtcNow;
 
+        // Every stock change writes an immutable movement record for the audit trail
         var movement = new InventoryMovement
         {
             PartId = dto.PartId,

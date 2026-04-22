@@ -666,7 +666,7 @@ describe("TeamCarPage", () => {
 
     await user.click(sessionsViewAll);
 
-    expect(mockNavigate).toHaveBeenCalledWith("/car-sessions");
+    expect(mockNavigate).toHaveBeenCalledWith("/car-sessions?car=1");
   });
 
   it("navigates to issue reports on View all issues click", async () => {
@@ -682,7 +682,7 @@ describe("TeamCarPage", () => {
 
     await user.click(issuesViewAll);
 
-    expect(mockNavigate).toHaveBeenCalledWith("/issue-reports");
+    expect(mockNavigate).toHaveBeenCalledWith("/issue-reports?car=1");
   });
 
   it("navigates to work orders on View all work orders click", async () => {
@@ -698,7 +698,7 @@ describe("TeamCarPage", () => {
 
     await user.click(workOrdersViewAll);
 
-    expect(mockNavigate).toHaveBeenCalledWith("/work-orders");
+    expect(mockNavigate).toHaveBeenCalledWith("/work-orders?car=1");
   });
 
   it("navigates to work order details on row click", async () => {

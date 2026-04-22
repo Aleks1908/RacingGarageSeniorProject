@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import PageLayout from "@/components/PageLayout/PageLayout";
 import { useAuth } from "@/auth/useAuth";
@@ -52,6 +52,7 @@ function fmtDate(d?: string | null) {
 
 export default function CarSessionsPage() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const roles = user?.roles ?? [];
@@ -69,7 +70,9 @@ export default function CarSessionsPage() {
   const [err, setErr] = useState<string | null>(null);
 
   const [q, setQ] = useState("");
-  const [filterCarId, setFilterCarId] = useState<string>("all");
+  const [filterCarId, setFilterCarId] = useState<string>(
+    searchParams.get("car") ?? "all"
+  );
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CarSessionRead | null>(null);

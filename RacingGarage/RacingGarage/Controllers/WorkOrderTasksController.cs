@@ -86,6 +86,7 @@ public class WorkOrderTasksController : ControllerBase
             WorkOrderId = dto.WorkOrderId,
             Title = dto.Title.Trim(),
             Description = dto.Description?.Trim() ?? "",
+            // New tasks default to "Todo" if no status is provided
             Status = string.IsNullOrWhiteSpace(dto.Status) ? "Todo" : dto.Status.Trim(),
             SortOrder = dto.SortOrder,
             EstimatedMinutes = dto.EstimatedMinutes,

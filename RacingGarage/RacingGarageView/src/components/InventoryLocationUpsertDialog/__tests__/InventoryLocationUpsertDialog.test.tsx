@@ -173,6 +173,7 @@ describe("InventoryLocationUpsertDialog", () => {
         name: "New Location",
         code: "B2",
         description: "Test description",
+        isActive: true,
       });
     });
 
@@ -343,7 +344,7 @@ describe("InventoryLocationUpsertDialog", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should handle isActive toggle", async () => {
+  it("should pass isActive true by default on create", async () => {
     (createInventoryLocation as jest.Mock).mockResolvedValue({ id: 2 });
 
     render(
@@ -368,7 +369,9 @@ describe("InventoryLocationUpsertDialog", () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(createInventoryLocation).toHaveBeenCalled();
+      expect(createInventoryLocation).toHaveBeenCalledWith(
+        expect.objectContaining({ isActive: true })
+      );
     });
   });
 

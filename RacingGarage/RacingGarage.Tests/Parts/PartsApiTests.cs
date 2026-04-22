@@ -358,6 +358,32 @@ public class PartsApiTests : IClassFixture<TestAppFactory>
     }
 
     [Fact]
+    public async Task Create_valid_can_create_inactive_part()
+    {
+        await ResetDbAsync();
+
+        var supplierId = await SeedSupplierAsync("Supplier Inactive Part");
+        var client = _factory.CreateClient().AsUser(userId: 1, roles: "PartsClerk");
+
+        var res = await client.PostAsJsonAsync("/api/parts", new
+        {
+            name = "Archived Part",
+            sku = "ARCH-001",
+            category = "Brakes",
+            unitCost = 5.0,
+            reorderPoint = 0,
+            supplierId,
+            isActive = false
+        });
+
+        res.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var created = await res.Content.ReadFromJsonAsync<PartReadLike>();
+        created.Should().NotBeNull();
+        created!.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Update_requires_role()
     {
         await ResetDbAsync();
@@ -519,7 +545,7 @@ public class PartsApiTests : IClassFixture<TestAppFactory>
         public string? SupplierName { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
-        public int CurrentStock { get; set; }
-        public bool NeedsReorder { get; set; }
+        public int? CurrentStock { get; set; }
+        public bool? NeedsReorder { get; set; }
     }
 }

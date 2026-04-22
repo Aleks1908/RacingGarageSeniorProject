@@ -90,7 +90,7 @@ public class SuppliersController : ControllerBase
             AddressLine2 = dto.AddressLine2?.Trim() ?? "",
             City = dto.City?.Trim() ?? "",
             Country = dto.Country?.Trim() ?? "",
-            IsActive = true,
+            IsActive = dto.IsActive,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -145,6 +145,7 @@ public class SuppliersController : ControllerBase
     }
 
     // DELETE /api/suppliers/{id}
+    // Soft-delete so the supplier is deactivated rather than removed so existing part references remain valid
     [Authorize(Roles = "PartsClerk,Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)

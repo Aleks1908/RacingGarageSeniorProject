@@ -34,11 +34,13 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
             return BadRequest("Email and password are required.");
 
+        // Normalize to lowercase so lookups are case-insensitive
         var email = dto.Email.Trim().ToLowerInvariant();
 
         var user = await _db.Users
             .FirstOrDefaultAsync(u => u.Email.ToLower() == email);
 
+        // Return the same message for both to avoid user enumeration
         if (user is null)
             return Unauthorized("Invalid credentials.");
 
@@ -46,6 +48,7 @@ public class AuthController : ControllerBase
         if (verify == PasswordVerificationResult.Failed)
             return Unauthorized("Invalid credentials.");
 
+        // Fetch all roles assigned to the user via the UserRoles join table
         var roles = await (
             from ur in _db.UserRoles
             join r in _db.Roles on ur.RoleId equals r.Id
@@ -67,6 +70,7 @@ public class AuthController : ControllerBase
         });
     }
 
+    // Builds a signed JWT 
     private (string token, DateTime expiresAtUtc) CreateJwt(AppUser user, List<string> roles)
     {
         var issuer = _config["Jwt:Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer missing");

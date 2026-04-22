@@ -262,7 +262,7 @@ export function IssueReportUpsertDialog({
                 rules={{ validate: (v) => !!Number(v) || "Select a car" }}
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Car</FormLabel>
+                    <FormLabel>Car <span className="text-destructive">*</span></FormLabel>
 
                     {lockedCar ? (
                       <>
@@ -390,7 +390,7 @@ export function IssueReportUpsertDialog({
                 rules={{ required: "Title is required" }}
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Title</FormLabel>
+                    <FormLabel>Title <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g. Brake vibration"

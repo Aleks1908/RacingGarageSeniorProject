@@ -59,11 +59,11 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(
-      screen.getByRole("heading", { name: "New Part" })
+      screen.getByRole("heading", { name: "New Part" }),
     ).toBeInTheDocument();
   });
 
@@ -75,11 +75,11 @@ describe("PartsUpsertDialog", () => {
         editing={mockPart}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(
-      screen.getByRole("heading", { name: "Edit Part (ID 1)" })
+      screen.getByRole("heading", { name: "Edit Part (ID 1)" }),
     ).toBeInTheDocument();
   });
 
@@ -91,7 +91,7 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     const cancelButton = screen.getByRole("button", { name: "Cancel" });
@@ -108,7 +108,7 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(container.querySelector('[role="dialog"]')).not.toBeInTheDocument();
@@ -122,17 +122,17 @@ describe("PartsUpsertDialog", () => {
         editing={mockPart}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    expect(screen.getByLabelText("Name")).toHaveValue("Brake Pads");
-    expect(screen.getByLabelText("Sku")).toHaveValue("BP-001");
-    expect(screen.getByLabelText("Category")).toHaveValue("Brakes");
+    expect(screen.getByLabelText("Name", { exact: false })).toHaveValue("Brake Pads");
+    expect(screen.getByLabelText("Sku", { exact: false })).toHaveValue("BP-001");
+    expect(screen.getByLabelText("Category", { exact: false })).toHaveValue("Brakes");
     expect(screen.getByLabelText("Unit cost")).toHaveValue(199.99);
     expect(screen.getByLabelText("Reorder point")).toHaveValue(5);
   });
 
-  it("should show active switch only when editing", () => {
+  it("should always show active switch regardless of editing state", () => {
     const { rerender } = render(
       <PartsUpsertDialog
         open={true}
@@ -140,10 +140,10 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    expect(screen.queryByText("Active")).not.toBeInTheDocument();
+    expect(screen.getByText("Active")).toBeInTheDocument();
 
     rerender(
       <PartsUpsertDialog
@@ -152,7 +152,7 @@ describe("PartsUpsertDialog", () => {
         editing={mockPart}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(screen.getByText("Active")).toBeInTheDocument();
@@ -173,15 +173,15 @@ describe("PartsUpsertDialog", () => {
           },
         ]}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(
       screen.getByText(
         (_content, element) =>
           element?.textContent ===
-          "You need to create an active supplier before you can create parts."
-      )
+          "You need to create an active supplier before you can create parts.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -193,7 +193,7 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={[]}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     const submitButton = screen.getByRole("button", { name: "Create part" });
@@ -208,7 +208,7 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(screen.getByRole("combobox")).toBeInTheDocument();
@@ -222,13 +222,13 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    fireEvent.change(screen.getByLabelText("Sku"), {
+    fireEvent.change(screen.getByLabelText("Sku", { exact: false }), {
       target: { value: "TEST-001" },
     });
-    fireEvent.change(screen.getByLabelText("Category"), {
+    fireEvent.change(screen.getByLabelText("Category", { exact: false }), {
       target: { value: "Test" },
     });
 
@@ -248,13 +248,13 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    fireEvent.change(screen.getByLabelText("Name"), {
+    fireEvent.change(screen.getByLabelText("Name", { exact: false }), {
       target: { value: "Test Part" },
     });
-    fireEvent.change(screen.getByLabelText("Category"), {
+    fireEvent.change(screen.getByLabelText("Category", { exact: false }), {
       target: { value: "Test" },
     });
 
@@ -274,13 +274,13 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    fireEvent.change(screen.getByLabelText("Name"), {
+    fireEvent.change(screen.getByLabelText("Name", { exact: false }), {
       target: { value: "Test Part" },
     });
-    fireEvent.change(screen.getByLabelText("Sku"), {
+    fireEvent.change(screen.getByLabelText("Sku", { exact: false }), {
       target: { value: "TEST-001" },
     });
 
@@ -300,16 +300,16 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    fireEvent.change(screen.getByLabelText("Name"), {
+    fireEvent.change(screen.getByLabelText("Name", { exact: false }), {
       target: { value: "Test Part" },
     });
-    fireEvent.change(screen.getByLabelText("Sku"), {
+    fireEvent.change(screen.getByLabelText("Sku", { exact: false }), {
       target: { value: "TEST-001" },
     });
-    fireEvent.change(screen.getByLabelText("Category"), {
+    fireEvent.change(screen.getByLabelText("Category", { exact: false }), {
       target: { value: "Test" },
     });
 
@@ -329,10 +329,10 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    const skuInput = screen.getByLabelText("Sku");
+    const skuInput = screen.getByLabelText("Sku", { exact: false });
     fireEvent.change(skuInput, { target: { value: "test-001" } });
     fireEvent.blur(skuInput);
 
@@ -347,15 +347,15 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    expect(screen.getByLabelText("Name")).toBeInTheDocument();
-    expect(screen.getByLabelText("Sku")).toBeInTheDocument();
-    expect(screen.getByLabelText("Category")).toBeInTheDocument();
+    expect(screen.getByLabelText("Name", { exact: false })).toBeInTheDocument();
+    expect(screen.getByLabelText("Sku", { exact: false })).toBeInTheDocument();
+    expect(screen.getByLabelText("Category", { exact: false })).toBeInTheDocument();
     expect(screen.getByLabelText("Unit cost")).toBeInTheDocument();
     expect(screen.getByLabelText("Reorder point")).toBeInTheDocument();
-    expect(screen.getByLabelText("Supplier")).toBeInTheDocument();
+    expect(screen.getByLabelText("Supplier", { exact: false })).toBeInTheDocument();
   });
 
   it("should successfully update an existing part", async () => {
@@ -368,10 +368,10 @@ describe("PartsUpsertDialog", () => {
         editing={mockPart}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    fireEvent.change(screen.getByLabelText("Name"), {
+    fireEvent.change(screen.getByLabelText("Name", { exact: false }), {
       target: { value: "Updated Part" },
     });
 
@@ -401,7 +401,7 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     const unitCostInput = screen.getByLabelText("Unit cost");
@@ -419,11 +419,11 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(
-      screen.getByRole("button", { name: "Create part" })
+      screen.getByRole("button", { name: "Create part" }),
     ).toBeInTheDocument();
   });
 
@@ -435,11 +435,11 @@ describe("PartsUpsertDialog", () => {
         editing={mockPart}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     expect(
-      screen.getByRole("button", { name: "Save changes" })
+      screen.getByRole("button", { name: "Save changes" }),
     ).toBeInTheDocument();
   });
 
@@ -451,7 +451,7 @@ describe("PartsUpsertDialog", () => {
         editing={mockPart}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     const activeSwitch = screen.getByRole("switch");
@@ -469,16 +469,16 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    fireEvent.change(screen.getByLabelText("Name"), {
+    fireEvent.change(screen.getByLabelText("Name", { exact: false }), {
       target: { value: "Test Part" },
     });
-    fireEvent.change(screen.getByLabelText("Sku"), {
+    fireEvent.change(screen.getByLabelText("Sku", { exact: false }), {
       target: { value: "TEST-001" },
     });
-    fireEvent.change(screen.getByLabelText("Category"), {
+    fireEvent.change(screen.getByLabelText("Category", { exact: false }), {
       target: { value: "Test" },
     });
     fireEvent.change(screen.getByLabelText("Unit cost"), {
@@ -504,16 +504,16 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    fireEvent.change(screen.getByLabelText("Name"), {
+    fireEvent.change(screen.getByLabelText("Name", { exact: false }), {
       target: { value: "Test Part" },
     });
-    fireEvent.change(screen.getByLabelText("Sku"), {
+    fireEvent.change(screen.getByLabelText("Sku", { exact: false }), {
       target: { value: "TEST-001" },
     });
-    fireEvent.change(screen.getByLabelText("Category"), {
+    fireEvent.change(screen.getByLabelText("Category", { exact: false }), {
       target: { value: "Test" },
     });
     fireEvent.change(screen.getByLabelText("Unit cost"), {
@@ -554,16 +554,16 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    fireEvent.change(screen.getByLabelText("Name"), {
+    fireEvent.change(screen.getByLabelText("Name", { exact: false }), {
       target: { value: "New Part" },
     });
-    fireEvent.change(screen.getByLabelText("Sku"), {
+    fireEvent.change(screen.getByLabelText("Sku", { exact: false }), {
       target: { value: "new-001" },
     });
-    fireEvent.change(screen.getByLabelText("Category"), {
+    fireEvent.change(screen.getByLabelText("Category", { exact: false }), {
       target: { value: "New Category" },
     });
     fireEvent.change(screen.getByLabelText("Unit cost"), {
@@ -593,6 +593,7 @@ describe("PartsUpsertDialog", () => {
         unitCost: 150,
         reorderPoint: 10,
         supplierId: 1,
+        isActive: true,
       });
       expect(mockOnOpenChange).toHaveBeenCalledWith(false);
       expect(mockOnSaved).toHaveBeenCalled();
@@ -610,16 +611,16 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    fireEvent.change(screen.getByLabelText("Name"), {
+    fireEvent.change(screen.getByLabelText("Name", { exact: false }), {
       target: { value: "Test Part" },
     });
-    fireEvent.change(screen.getByLabelText("Sku"), {
+    fireEvent.change(screen.getByLabelText("Sku", { exact: false }), {
       target: { value: "TEST-001" },
     });
-    fireEvent.change(screen.getByLabelText("Category"), {
+    fireEvent.change(screen.getByLabelText("Category", { exact: false }), {
       target: { value: "Test" },
     });
     fireEvent.change(screen.getByLabelText("Unit cost"), {
@@ -660,7 +661,7 @@ describe("PartsUpsertDialog", () => {
         editing={inactivePart}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
     const submitButton = screen.getByRole("button", { name: "Save changes" });
@@ -702,16 +703,16 @@ describe("PartsUpsertDialog", () => {
         editing={null}
         suppliers={mockSuppliers}
         onSaved={mockOnSaved}
-      />
+      />,
     );
 
-    fireEvent.change(screen.getByLabelText("Name"), {
+    fireEvent.change(screen.getByLabelText("Name", { exact: false }), {
       target: { value: "Simple Part" },
     });
-    fireEvent.change(screen.getByLabelText("Sku"), {
+    fireEvent.change(screen.getByLabelText("Sku", { exact: false }), {
       target: { value: "simple-001" },
     });
-    fireEvent.change(screen.getByLabelText("Category"), {
+    fireEvent.change(screen.getByLabelText("Category", { exact: false }), {
       target: { value: "Simple" },
     });
 
@@ -735,6 +736,7 @@ describe("PartsUpsertDialog", () => {
         unitCost: 0,
         reorderPoint: 0,
         supplierId: 1,
+        isActive: true,
       });
     });
   });

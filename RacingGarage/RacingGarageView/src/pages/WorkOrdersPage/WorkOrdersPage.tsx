@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PageLayout from "@/components/PageLayout/PageLayout";
 import { useAuth } from "@/auth/useAuth";
 
@@ -40,6 +40,7 @@ import type { UserRead } from "@/api/users/types";
 import type { WorkOrderRead } from "@/api/shared/types";
 import type { TeamCarRead } from "@/api/teamCars/types";
 import { WorkOrderUpsertDialog } from "@/components/WorkOrderUpsertDialog/WorkOrderUpsertDialog";
+import { fmtDateTime } from "@/lib/utils";
 
 type Filters = {
   teamCarId: string;
@@ -52,6 +53,7 @@ const statuses = ["Open", "In Progress", "Closed"] as const;
 
 export default function WorkOrdersPage() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
 
   const roles = user?.roles ?? [];
@@ -65,7 +67,7 @@ export default function WorkOrdersPage() {
   const [err, setErr] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<Filters>({
-    teamCarId: "all",
+    teamCarId: searchParams.get("car") ?? "all",
     status: "all",
     priority: "all",
   });
@@ -77,19 +79,6 @@ export default function WorkOrdersPage() {
     () => users.filter((u) => u.isActive && u.roles.includes("Mechanic")),
     [users],
   );
-
-  function fmtDateTime(v?: string | null) {
-    if (!v) return "—";
-    const d = new Date(v);
-    if (Number.isNaN(d.getTime())) return v;
-    return new Intl.DateTimeFormat(undefined, {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(d);
-  }
 
   async function load() {
     setLoading(true);

@@ -23,13 +23,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 type Props = {
   open: boolean;
@@ -66,7 +60,7 @@ export function InventoryLocationUpsertDialog({
 
   const dialogTitle = useMemo(
     () => (editing ? `Edit Location #${editing.id}` : "New Inventory Location"),
-    [editing]
+    [editing],
   );
 
   useEffect(() => {
@@ -114,6 +108,7 @@ export function InventoryLocationUpsertDialog({
           name,
           code,
           description,
+          isActive: values.isActive,
         });
       }
 
@@ -142,7 +137,7 @@ export function InventoryLocationUpsertDialog({
                 rules={{ required: "Name is required" }}
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g. Main Shelf A"
@@ -161,7 +156,7 @@ export function InventoryLocationUpsertDialog({
                 rules={{ required: "Code is required" }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Code</FormLabel>
+                    <FormLabel>Code <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g. A1"
@@ -176,38 +171,9 @@ export function InventoryLocationUpsertDialog({
 
               <FormField
                 control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-
-                    <Select
-                      value={field.value ? "active" : "inactive"}
-                      onValueChange={(v) => field.onChange(v === "active")}
-                      disabled={saving}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="description"
                 render={({ field }) => (
-                  <FormItem className="sm:col-span-2">
+                  <FormItem className="">
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Input
@@ -217,6 +183,28 @@ export function InventoryLocationUpsertDialog({
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2 flex items-center justify-between rounded-md border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel>Active</FormLabel>
+                      <div className="text-xs text-muted-foreground">
+                        If off, this location won't be selectable for stock
+                        movements, but stays in history.
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={!!field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={saving}
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />
@@ -239,8 +227,8 @@ export function InventoryLocationUpsertDialog({
                 {saving
                   ? "Saving..."
                   : editing
-                  ? "Save Changes"
-                  : "Create Location"}
+                    ? "Save Changes"
+                    : "Create Location"}
               </Button>
             </div>
 

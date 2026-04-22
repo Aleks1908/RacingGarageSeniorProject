@@ -69,7 +69,7 @@ public class InventoryLocationsController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(dto.Name)) return BadRequest("Name is required.");
         if (string.IsNullOrWhiteSpace(dto.Code)) return BadRequest("Code is required.");
-
+        
         var code = dto.Code.Trim().ToUpperInvariant();
         var exists = await _db.InventoryLocations.AnyAsync(l => l.Code == code);
         if (exists) return Conflict($"Location code '{code}' already exists.");
@@ -79,7 +79,7 @@ public class InventoryLocationsController : ControllerBase
             Name = dto.Name.Trim(),
             Code = code,
             Description = dto.Description?.Trim() ?? "",
-            IsActive = true,
+            IsActive = dto.IsActive,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -112,6 +112,7 @@ public class InventoryLocationsController : ControllerBase
 
         var code = dto.Code.Trim().ToUpperInvariant();
 
+        // Only run the uniqueness check when the code actually changes, to avoid a false conflict on self
         if (!string.Equals(loc.Code, code, StringComparison.OrdinalIgnoreCase))
         {
             var taken = await _db.InventoryLocations.AnyAsync(l => l.Code == code && l.Id != id);

@@ -182,6 +182,7 @@ export function PartsUpsertDialog({
           unitCost,
           reorderPoint,
           supplierId: supplierIdNum,
+          isActive: !!v.isActive,
         };
         await createPart(dto);
       }
@@ -213,7 +214,7 @@ export function PartsUpsertDialog({
                 rules={{ required: "Name is required" }}
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g. Brake Pads"
@@ -232,7 +233,7 @@ export function PartsUpsertDialog({
                 rules={{ required: "Sku is required" }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sku</FormLabel>
+                    <FormLabel>Sku <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g. BP-001"
@@ -254,7 +255,7 @@ export function PartsUpsertDialog({
                 rules={{ required: "Category is required" }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>Category <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g. Brakes"
@@ -321,7 +322,7 @@ export function PartsUpsertDialog({
                 }}
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Supplier</FormLabel>
+                    <FormLabel>Supplier <span className="text-destructive">*</span></FormLabel>
                     <Select
                       value={field.value ?? ""}
                       onValueChange={field.onChange}
@@ -354,30 +355,28 @@ export function PartsUpsertDialog({
                 )}
               />
 
-              {editing && (
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-2 flex items-center justify-between rounded-md border p-3">
-                      <div className="space-y-0.5">
-                        <FormLabel>Active</FormLabel>
-                        <div className="text-xs text-muted-foreground">
-                          If off, this part won’t be selectable for installs,
-                          but stays in history.
-                        </div>
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2 flex items-center justify-between rounded-md border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel>Active</FormLabel>
+                      <div className="text-xs text-muted-foreground">
+                        If off, this part won’t be selectable for installs,
+                        but stays in history.
                       </div>
-                      <FormControl>
-                        <Switch
-                          checked={!!field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={saving}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              )}
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={!!field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={saving}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </div>
 
             <div className="flex justify-end gap-2 pt-2">

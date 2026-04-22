@@ -15,6 +15,7 @@ public class IssueReportsController : ControllerBase
 {
     private readonly AppDbContext _db;
 
+    // Status constants shared by both issue and work order status transitions
     private const string ISSUE_STATUS_OPEN = "Open";
     private const string ISSUE_STATUS_LINKED = "Linked";
     private const string ISSUE_STATUS_CLOSED = "Closed";
@@ -39,6 +40,10 @@ public class IssueReportsController : ControllerBase
     private static bool WoIsClosed(string? status) =>
         string.Equals(status?.Trim(), WO_STATUS_CLOSED, StringComparison.OrdinalIgnoreCase);
     
+    // Enforces the 1-to-1 constraint between an issue and a work order:
+    // Unlinking sets the issue back to Open
+    // Linking displaces any previously linked issue 
+    // If the work order is already Closed, the issue is immediately closed too
     private async Task SyncIssueWorkOrderLinkAsync(int issueId, int? workOrderId)
     {
         var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == issueId);
@@ -55,10 +60,12 @@ public class IssueReportsController : ControllerBase
         var wo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId.Value);
         if (wo is null)
             throw new InvalidOperationException($"LinkedWorkOrderId '{workOrderId}' does not exist.");
-        
+
+        // Cross-car links are rejected to prevent data inconsistencies on the dashboard
         if (wo.TeamCarId != issue.TeamCarId)
             throw new InvalidOperationException("Cannot link Issue and Work Order from different cars.");
 
+        // Displace any other issue already linked to this work order before creating the new link
         var otherIssues = await _db.IssueReports
             .Where(x => x.LinkedWorkOrderId == wo.Id && x.Id != issue.Id)
             .ToListAsync();
@@ -69,9 +76,10 @@ public class IssueReportsController : ControllerBase
             other.Status = ISSUE_STATUS_OPEN;
             other.ClosedAt = null;
         }
-        
+
         issue.LinkedWorkOrderId = wo.Id;
-        
+
+        // Derive issue status from the linked work order's current state
         if (WoIsClosed(wo.Status))
         {
             issue.Status = ISSUE_STATUS_CLOSED;
@@ -173,6 +181,7 @@ public class IssueReportsController : ControllerBase
 
         if (issue is null) return NotFound();
 
+        // Drivers can only read their own issues; Managers see all
         if (User.IsInRole("Driver") && !User.IsInRole("Manager"))
         {
             if (!TryGetCurrentUserId(out var currentUserId))

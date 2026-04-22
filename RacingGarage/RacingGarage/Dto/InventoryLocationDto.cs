@@ -15,6 +15,7 @@ public sealed class InventoryLocationCreateDto
     public string Name { get; init; } = "";
     public string Code { get; init; } = "";
     public string Description { get; init; } = "";
+    public bool IsActive { get; init; } = true;
 }
 
 public sealed class InventoryLocationUpdateDto
@@ -22,5 +23,5 @@ public sealed class InventoryLocationUpdateDto
     public string Name { get; init; } = "";
     public string Code { get; init; } = "";
     public string Description { get; init; } = "";
-    public bool IsActive { get; init; } = true;
+    public bool IsActive { get; init; }
 }

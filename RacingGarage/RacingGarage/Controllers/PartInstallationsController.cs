@@ -110,6 +110,7 @@ public class PartInstallationsController : ControllerBase
         var locExists = await _db.InventoryLocations.AnyAsync(l => l.Id == dto.InventoryLocationId && l.IsActive);
         if (!locExists) return BadRequest($"InventoryLocationId '{dto.InventoryLocationId}' does not exist or is inactive.");
 
+        // Stock decrement, movement audit, and installation record must all commit atomically
         await using var tx = await _db.Database.BeginTransactionAsync();
 
         var stock = await _db.InventoryStock
@@ -132,7 +133,7 @@ public class PartInstallationsController : ControllerBase
             QuantityChange = -dto.Quantity,
             Reason = "Install",
             WorkOrderId = dto.WorkOrderId,
-            PerformedByUserId = currentUserId, 
+            PerformedByUserId = currentUserId,
             Notes = string.IsNullOrWhiteSpace(dto.Notes) ? "Part installation" : dto.Notes.Trim(),
             PerformedAt = DateTime.UtcNow
         };
@@ -188,6 +189,7 @@ public class PartInstallationsController : ControllerBase
 
         if (install is null) return NotFound();
 
+        // Restore the consumed quantity to the source location when an installation is deleted
         var stock = await _db.InventoryStock
             .FirstOrDefaultAsync(s =>
                 s.PartId == install.PartId &&

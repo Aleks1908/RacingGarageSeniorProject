@@ -34,10 +34,8 @@ public class WorkOrdersController : ControllerBase
     private static bool IsClosed(string? status) =>
         string.Equals(status?.Trim(), WO_STATUS_CLOSED, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>
     /// Sets car status to Service if ANY work order for that car is not Closed, otherwise Active.
     /// If car is Retired => never touch it.
-    /// </summary>
     private async Task SetCarStatusFromWorkOrdersAsync(
         int carId,
         int? excludeWorkOrderId = null,
@@ -167,6 +165,7 @@ public class WorkOrdersController : ControllerBase
         _db.WorkOrders.Add(wo);
         await _db.SaveChangesAsync();
 
+        // Optionally link the new work order to an existing issue report at creation time
         if (dto.LinkedIssueId.HasValue)
         {
             var issue = await _db.IssueReports.FirstOrDefaultAsync(i => i.Id == dto.LinkedIssueId.Value);
@@ -175,6 +174,7 @@ public class WorkOrdersController : ControllerBase
                 if (issue.TeamCarId != wo.TeamCarId)
                     return BadRequest("Cannot link Issue and Work Order from different cars.");
 
+                // Displace any issue already pointing at this work order before creating the new link
                 var otherIssues = await _db.IssueReports
                     .Where(x => x.LinkedWorkOrderId == wo.Id && x.Id != issue.Id)
                     .ToListAsync();
@@ -184,7 +184,7 @@ public class WorkOrdersController : ControllerBase
                     other.Status = "Open";
                     other.ClosedAt = null;
                 }
-                
+
                 issue.LinkedWorkOrderId = wo.Id;
                 issue.Status = ISSUE_STATUS_LINKED;
             }
@@ -251,11 +251,12 @@ public class WorkOrdersController : ControllerBase
         var newCarId = wo.TeamCarId;
         var newStatus = wo.Status;
 
+        // When the work order status changes, cascade the new state to the linked issue
         if (!string.Equals(prevStatus, newStatus, StringComparison.OrdinalIgnoreCase))
         {
             var linkedIssue = await _db.IssueReports
                 .FirstOrDefaultAsync(i => i.LinkedWorkOrderId == wo.Id);
-            
+
             if (linkedIssue != null)
             {
                 if (IsClosed(newStatus))
@@ -265,6 +266,7 @@ public class WorkOrdersController : ControllerBase
                 }
                 else
                 {
+                    // Work order re-opened, reset the linked issue back to Linked
                     linkedIssue.Status = ISSUE_STATUS_LINKED;
                     linkedIssue.ClosedAt = null;
                 }
@@ -300,9 +302,10 @@ public class WorkOrdersController : ControllerBase
 
         var carId = wo.TeamCarId;
 
+        // Unlink the associated issue before deletion so it is not left in an orphaned "Linked" state
         var linkedIssue = await _db.IssueReports
             .FirstOrDefaultAsync(i => i.LinkedWorkOrderId == id);
-        
+
         if (linkedIssue != null)
         {
             linkedIssue.LinkedWorkOrderId = null;

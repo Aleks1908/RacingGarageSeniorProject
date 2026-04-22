@@ -23,7 +23,6 @@ const mockSupplier = {
 describe("SupplierUpsertDialog", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    window.alert = jest.fn();
   });
 
   it("should close dialog on cancel", () => {
@@ -90,8 +89,30 @@ describe("SupplierUpsertDialog", () => {
       />
     );
 
-    const submitButton = screen.getByRole("button", { name: "Create" });
-    fireEvent.click(submitButton);
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Name is required/i)).toBeInTheDocument();
+    });
+
+    expect(createSupplier).not.toHaveBeenCalled();
+  });
+
+  it("should reject whitespace-only name", async () => {
+    render(
+      <SupplierUpsertDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        editing={null}
+        canEdit={true}
+        onSaved={mockOnSaved}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText(/Name/i), {
+      target: { value: "   " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
 
     await waitFor(() => {
       expect(screen.getByText(/Name is required/i)).toBeInTheDocument();
@@ -121,6 +142,9 @@ describe("SupplierUpsertDialog", () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
+      expect(
+        screen.getByText(/Enter a valid email address/i)
+      ).toBeInTheDocument();
       expect(createSupplier).not.toHaveBeenCalled();
     });
   });
@@ -200,8 +224,10 @@ describe("SupplierUpsertDialog", () => {
         addressLine2: "Suite 100",
         city: "New York",
         country: "USA",
+        isActive: true,
       });
     });
+
 
     expect(mockOnOpenChange).toHaveBeenCalledWith(false);
     expect(mockOnSaved).toHaveBeenCalled();
@@ -229,12 +255,13 @@ describe("SupplierUpsertDialog", () => {
     await waitFor(() => {
       expect(createSupplier).toHaveBeenCalledWith({
         name: "Minimal Supplier",
-        contactEmail: null,
-        phone: null,
-        addressLine1: null,
-        addressLine2: null,
-        city: null,
-        country: null,
+        contactEmail: "",
+        phone: "",
+        addressLine1: "",
+        addressLine2: "",
+        city: "",
+        country: "",
+        isActive: true,
       });
     });
 
@@ -293,7 +320,7 @@ describe("SupplierUpsertDialog", () => {
       />
     );
 
-    const activeCheckbox = screen.getByRole("checkbox");
+    const activeCheckbox = screen.getByRole("switch");
     expect(activeCheckbox).toBeChecked();
 
     fireEvent.click(activeCheckbox);
@@ -336,7 +363,7 @@ describe("SupplierUpsertDialog", () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith("Network error");
+      expect(screen.getByText("Network error")).toBeInTheDocument();
     });
 
     expect(mockOnOpenChange).not.toHaveBeenCalled();
@@ -362,11 +389,40 @@ describe("SupplierUpsertDialog", () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith("Update failed");
+      expect(screen.getByText("Update failed")).toBeInTheDocument();
     });
 
     expect(mockOnOpenChange).not.toHaveBeenCalled();
     expect(mockOnSaved).not.toHaveBeenCalled();
+  });
+
+  it("should route duplicate-name backend error to name field", async () => {
+    (createSupplier as jest.Mock).mockRejectedValueOnce(
+      new Error("Supplier with name 'Acme' already exists.")
+    );
+
+    render(
+      <SupplierUpsertDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        editing={null}
+        canEdit={true}
+        onSaved={mockOnSaved}
+      />
+    );
+
+    const nameInput = screen.getByLabelText(/Name/i);
+    fireEvent.change(nameInput, { target: { value: "Acme" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Supplier with name 'Acme' already exists.")
+      ).toBeInTheDocument();
+    });
+
+    expect(mockOnOpenChange).not.toHaveBeenCalled();
   });
 
   it("should disable form fields when canEdit is false", () => {
@@ -497,8 +553,8 @@ describe("SupplierUpsertDialog", () => {
     });
   });
 
-  it("should not show isActive checkbox in create mode", () => {
-    render(
+  it("should always show isActive switch regardless of editing state", () => {
+    const { rerender } = render(
       <SupplierUpsertDialog
         open={true}
         onOpenChange={mockOnOpenChange}
@@ -508,12 +564,10 @@ describe("SupplierUpsertDialog", () => {
       />
     );
 
-    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
-    expect(screen.queryByText("Active")).not.toBeInTheDocument();
-  });
+    expect(screen.getByRole("switch")).toBeInTheDocument();
+    expect(screen.getByText("Active")).toBeInTheDocument();
 
-  it("should show isActive checkbox in edit mode", () => {
-    render(
+    rerender(
       <SupplierUpsertDialog
         open={true}
         onOpenChange={mockOnOpenChange}
@@ -523,7 +577,7 @@ describe("SupplierUpsertDialog", () => {
       />
     );
 
-    expect(screen.getByRole("checkbox")).toBeInTheDocument();
+    expect(screen.getByRole("switch")).toBeInTheDocument();
     expect(screen.getByText("Active")).toBeInTheDocument();
   });
 });

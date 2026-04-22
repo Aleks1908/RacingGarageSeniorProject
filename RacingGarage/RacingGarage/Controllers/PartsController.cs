@@ -25,6 +25,7 @@ public class PartsController : ControllerBase
         [FromQuery] int? locationId,
         [FromQuery] bool? needsReorder)
     {
+    // needsReorder requires a location context because stock is per-location
     if (needsReorder == true && !locationId.HasValue)
         return BadRequest("locationId is required when needsReorder=true.");
 
@@ -48,7 +49,7 @@ public class PartsController : ControllerBase
     if (locationId.HasValue)
     {
         var locId = locationId.Value;
-
+        
         var queryWithStock =
             from p in partsQuery
             join s in _db.InventoryStock.AsNoTracking().Where(x => x.InventoryLocationId == locId)
@@ -169,7 +170,7 @@ public class PartsController : ControllerBase
             UnitCost = dto.UnitCost,
             ReorderPoint = dto.ReorderPoint,
             SupplierId = dto.SupplierId,
-            IsActive = true,
+            IsActive = dto.IsActive,
             CreatedAt = DateTime.UtcNow
         };
 

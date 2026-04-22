@@ -26,6 +26,8 @@ public sealed class SupplierCreateDto
     public string AddressLine2 { get; init; } = "";
     public string City { get; init; } = "";
     public string Country { get; init; } = "";
+
+    public bool IsActive { get; init; } = true;
 }
 
 public sealed class SupplierUpdateDto
@@ -39,5 +41,5 @@ public sealed class SupplierUpdateDto
     public string City { get; init; } = "";
     public string Country { get; init; } = "";
 
-    public bool IsActive { get; init; } = true;
+    public bool IsActive { get; init; }
 }

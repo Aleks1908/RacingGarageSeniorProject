@@ -198,6 +198,32 @@ public class SuppliersApiTests : IClassFixture<TestAppFactory>
     }
 
     [Fact]
+    public async Task Create_valid_can_create_inactive_supplier()
+    {
+        await ResetDbAsync();
+
+        var client = _factory.CreateClient().AsUser(userId: 1, roles: "PartsClerk");
+
+        var res = await client.PostAsJsonAsync("/api/suppliers", new
+        {
+            name = "Archived Supplier",
+            contactEmail = "",
+            phone = "",
+            addressLine1 = "",
+            addressLine2 = "",
+            city = "",
+            country = "",
+            isActive = false
+        });
+
+        res.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var created = await res.Content.ReadFromJsonAsync<SupplierReadLike>();
+        created.Should().NotBeNull();
+        created!.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Update_requires_role()
     {
         await ResetDbAsync();

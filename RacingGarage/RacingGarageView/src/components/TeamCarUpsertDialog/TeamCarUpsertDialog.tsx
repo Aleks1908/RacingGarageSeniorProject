@@ -163,7 +163,7 @@ export function TeamCarUpsertDialog({
                 rules={{ required: "Car number is required" }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Car Number</FormLabel>
+                    <FormLabel>Car Number <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g. 27"
@@ -200,7 +200,7 @@ export function TeamCarUpsertDialog({
                 rules={{ required: "Make is required" }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Make</FormLabel>
+                    <FormLabel>Make <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input placeholder="BMW" {...field} disabled={disabled} />
                     </FormControl>
@@ -215,7 +215,7 @@ export function TeamCarUpsertDialog({
                 rules={{ required: "Model is required" }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Model</FormLabel>
+                    <FormLabel>Model <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input placeholder="E46" {...field} disabled={disabled} />
                     </FormControl>
@@ -233,7 +233,7 @@ export function TeamCarUpsertDialog({
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Year</FormLabel>
+                    <FormLabel>Year <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -253,7 +253,7 @@ export function TeamCarUpsertDialog({
                 rules={{ required: "Class is required" }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Class</FormLabel>
+                    <FormLabel>Class <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         placeholder="GT4 / Time Attack / ..."
@@ -302,7 +302,7 @@ export function TeamCarUpsertDialog({
                 name="odometerKm"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Odometer (km)</FormLabel>
+                    <FormLabel>Odometer (km) <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         type="number"

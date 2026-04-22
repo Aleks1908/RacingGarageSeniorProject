@@ -32,6 +32,7 @@ public sealed class PartCreateDto
     public int ReorderPoint { get; init; }
 
     public int SupplierId { get; set; }
+    public bool IsActive { get; init; } = true;
 }
 
 public sealed class PartUpdateDto
@@ -43,6 +44,6 @@ public sealed class PartUpdateDto
     public decimal UnitCost { get; init; }
     public int ReorderPoint { get; init; }
 
-    public int SupplierId { get; set; } 
-    public bool IsActive { get; init; } = true;
+    public int SupplierId { get; set; }
+    public bool IsActive { get; init; }
 }

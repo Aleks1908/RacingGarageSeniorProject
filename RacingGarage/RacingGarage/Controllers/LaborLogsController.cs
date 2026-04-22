@@ -134,6 +134,7 @@ public class LaborLogsController : ControllerBase
         var log = await _db.LaborLogs.FirstOrDefaultAsync(l => l.Id == id);
         if (log is null) return NotFound();
 
+        // Mechanics can only edit their own time entries; Managers can edit any log
         if (!IsManager())
         {
             if (!TryGetCurrentUserId(out var currentUserId))

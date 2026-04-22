@@ -203,6 +203,7 @@ public class UsersController : ControllerBase
         var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
         if (role is null) return BadRequest($"Role '{roleName}' does not exist.");
 
+        // Replace all existing role assignments so each user always has exactly one role
         var existing = await _db.UserRoles.Where(ur => ur.UserId == id).ToListAsync();
         if (existing.Count > 0)
             _db.UserRoles.RemoveRange(existing);
@@ -294,6 +295,7 @@ public class UsersController : ControllerBase
 
         await _db.SaveChangesAsync();
 
+        // Make a fresh JWT so the client immediately reflects the updated name/email without re-login
         var token = MakeJwt(user);
         var read = ToReadDto(user);
 
@@ -330,6 +332,7 @@ public class UsersController : ControllerBase
         user.PasswordHash = _hasher.HashPassword(user, dto.NewPassword.Trim());
         await _db.SaveChangesAsync();
 
+        // Re-issue the token so the client stays authenticated after the password change
         var token = MakeJwt(user);
         var read = ToReadDto(user);
 

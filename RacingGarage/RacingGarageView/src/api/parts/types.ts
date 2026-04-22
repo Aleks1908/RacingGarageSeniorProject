@@ -27,6 +27,7 @@ export type PartCreate = {
   reorderPoint: number;
 
   supplierId: number | null;
+  isActive?: boolean;
 };
 
 export type PartUpdate = {

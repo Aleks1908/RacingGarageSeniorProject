@@ -234,7 +234,7 @@ export function CarSessionUpsertDialog({
                 rules={{ validate: (x) => !!Number(x) || "Select a car." }}
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Car</FormLabel>
+                    <FormLabel>Car <span className="text-destructive">*</span></FormLabel>
 
                     {carIsLocked ? (
                       <>
@@ -297,7 +297,7 @@ export function CarSessionUpsertDialog({
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel>Date <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         type="date"
@@ -317,7 +317,7 @@ export function CarSessionUpsertDialog({
                 rules={{ required: "Track name is required." }}
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Track</FormLabel>
+                    <FormLabel>Track <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         disabled={!canEdit || saving}
